@@ -243,7 +243,33 @@
   .phone-menu svg{width:18px;height:18px;flex:none}
   .phone-menu .call-opt svg{fill:var(--accent)}
   .phone-menu .wa-opt svg{fill:#25d366}
+  .phone-menu .li-opt svg{fill:#0a66c2}
   .foot-note{margin-top:34px;color:var(--muted);font-size:13px}
+
+  /* ---------- FLOATING QUICK ACTIONS ---------- */
+  .fab-wrap{position:fixed;right:20px;bottom:calc(20px + var(--pad-bottom));z-index:90;display:flex;flex-direction:column;align-items:flex-end}
+  body.cover-open .fab-wrap,.fab-wrap.hide-fab{display:none}
+  .fab-actions{display:flex;flex-direction:column;align-items:flex-end;gap:10px;margin-bottom:12px;opacity:0;transform:translateY(10px) scale(.96);pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+  .fab-wrap.open .fab-actions{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+  .fab-action{display:flex;align-items:center;gap:10px;text-decoration:none;background:none;border:none;padding:0;font:inherit;cursor:pointer}
+  .fab-action .fab-label{background:var(--surface);color:var(--text);font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid var(--line-strong);white-space:nowrap;box-shadow:0 8px 18px rgba(0,0,0,.28);opacity:0;transform:translateX(6px);transition:opacity .15s,transform .15s}
+  .fab-action:hover .fab-label,.fab-action:focus-visible .fab-label{opacity:1;transform:translateX(0)}
+  .fab-action .fab-ico{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:none;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+  .fab-action .fab-ico svg{width:19px;height:19px}
+  .fab-main{position:relative;overflow:visible;width:56px;height:56px;border-radius:50%;border:none;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;cursor:pointer;box-shadow:0 12px 28px rgba(0,0,0,.38);transition:transform .2s ease}
+  .fab-main:hover{transform:translateY(-2px)}
+  .fab-main svg{width:22px;height:22px;fill:currentColor;transition:transform .25s ease;position:relative;z-index:1}
+  .fab-wrap.open .fab-main svg{transform:rotate(45deg)}
+  .fab-pulse{position:absolute;inset:0;border-radius:50%;background:var(--accent);opacity:.55;animation:fabPulse 2.4s ease-out infinite}
+  .fab-wrap.open .fab-pulse{display:none}
+  @keyframes fabPulse{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.7);opacity:0}}
+  @media (prefers-reduced-motion:reduce){.fab-pulse{animation:none;display:none}}
+  @media (max-width:640px){
+    .fab-wrap{right:14px;bottom:calc(14px + var(--pad-bottom))}
+    .fab-main{width:50px;height:50px}
+    .fab-action .fab-ico{width:40px;height:40px}
+    .fab-action .fab-label{display:none}
+  }
 
   /* ---------- COVER (landing splash) ---------- */
   body.cover-open{overflow:hidden}
@@ -647,10 +673,21 @@
             </a>
           </div>
         </div>
-        <a class="cc" href="https://www.linkedin.com/in/isara-perera-a43a0313a" target="_blank" rel="noopener">
+        <div class="cc cc-phone" id="linkedinCard" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">
           <svg viewBox="0 0 24 24"><path d="M4.98 3.5A2.5 2.5 0 1 1 0 3.5a2.5 2.5 0 0 1 4.98 0ZM.24 8.25h4.5V24H.24V8.25ZM8.24 8.25h4.32v2.15h.06c.6-1.14 2.07-2.34 4.26-2.34 4.56 0 5.4 3 5.4 6.9V24h-4.5v-6.9c0-1.65-.03-3.78-2.3-3.78-2.3 0-2.65 1.8-2.65 3.66V24h-4.5V8.25Z"/></svg>
           <div><div class="l">LinkedIn</div><div class="v">isara-perera</div></div>
-        </a>
+          <svg class="chev" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+          <div class="phone-menu" id="linkedinMenu">
+            <a class="li-opt" href="https://www.linkedin.com/in/isara-perera-a43a0313a" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><path d="M4.98 3.5A2.5 2.5 0 1 1 0 3.5a2.5 2.5 0 0 1 4.98 0ZM.24 8.25h4.5V24H.24V8.25ZM8.24 8.25h4.32v2.15h.06c.6-1.14 2.07-2.34 4.26-2.34 4.56 0 5.4 3 5.4 6.9V24h-4.5v-6.9c0-1.65-.03-3.78-2.3-3.78-2.3 0-2.65 1.8-2.65 3.66V24h-4.5V8.25Z"/></svg>
+              Connect
+            </a>
+            <a class="li-opt" href="https://www.linkedin.com/messaging/compose/?recipient=isara-perera-a43a0313a" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z"/></svg>
+              Message
+            </a>
+          </div>
+        </div>
         <div class="cc" style="cursor:default">
           <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"/></svg>
           <div><div class="l">Location</div><div class="v">Sävedalen, Gothenburg — Sweden</div></div>
@@ -659,6 +696,36 @@
       <p class="foot-note">Permanent right to work in Sweden · English (professional) · Sinhala (native)</p>
     </section>
   </main>
+
+  <!-- FLOATING QUICK ACTIONS -->
+  <div class="fab-wrap" id="fabWrap">
+    <div class="fab-actions" id="fabActions">
+      <a class="fab-action" href="https://www.linkedin.com/in/isara-perera-a43a0313a" target="_blank" rel="noopener" aria-label="Connect on LinkedIn">
+        <span class="fab-label">Connect on LinkedIn</span>
+        <span class="fab-ico" style="background:#0a66c2"><svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M4.98 3.5A2.5 2.5 0 1 1 0 3.5a2.5 2.5 0 0 1 4.98 0ZM.24 8.25h4.5V24H.24V8.25ZM8.24 8.25h4.32v2.15h.06c.6-1.14 2.07-2.34 4.26-2.34 4.56 0 5.4 3 5.4 6.9V24h-4.5v-6.9c0-1.65-.03-3.78-2.3-3.78-2.3 0-2.65 1.8-2.65 3.66V24h-4.5V8.25Z"/></svg></span>
+      </a>
+      <a class="fab-action" href="https://www.linkedin.com/messaging/compose/?recipient=isara-perera-a43a0313a" target="_blank" rel="noopener" aria-label="Message on LinkedIn">
+        <span class="fab-label">Message on LinkedIn</span>
+        <span class="fab-ico" style="background:#0a66c2"><svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z"/></svg></span>
+      </a>
+      <button type="button" class="fab-action calendly-trigger" data-calendly-url="https://calendly.com/k-g-i-d-perera/30min" aria-label="Schedule a meeting">
+        <span class="fab-label">Schedule meeting</span>
+        <span class="fab-ico" style="background:var(--surface);border:1px solid var(--line-strong)"><svg viewBox="0 0 24 24" fill="var(--accent)" aria-hidden="true"><path d="M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7Zm12 8H5v10h14V10ZM5 8V6h14v2H5Z"/></svg></span>
+      </button>
+      <a class="fab-action" href="tel:+46764432825" aria-label="Call">
+        <span class="fab-label">Call</span>
+        <span class="fab-ico" style="background:var(--accent)"><svg viewBox="0 0 24 24" fill="var(--on-accent)" aria-hidden="true"><path d="M6.6 10.8a15.9 15.9 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.3.2 2.5.57 3.6a1 1 0 0 1-.25 1L6.6 10.8Z"/></svg></span>
+      </a>
+      <a class="fab-action" href="https://wa.me/46764432825" target="_blank" rel="noopener" aria-label="WhatsApp">
+        <span class="fab-label">WhatsApp</span>
+        <span class="fab-ico" style="background:#25d366"><svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.6-.8-1.9-.9-.2-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.2.2-.3.2-.5.1-.3-.1-1.2-.4-2.2-1.4-.8-.7-1.4-1.6-1.5-1.9-.2-.3 0-.4.1-.6l.4-.5c.1-.1.2-.3.2-.4.1-.2 0-.3 0-.5-.1-.1-.6-1.5-.8-2-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-1 1-1 2.3 0 1.4 1 2.7 1.1 2.9.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.6-.7 1.9-1.3.2-.6.2-1.1.2-1.3-.1-.1-.3-.2-.6-.3ZM12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.5A10 10 0 1 0 12 2Zm0 18.2c-1.6 0-3.2-.4-4.5-1.3l-.3-.2-3 .9.9-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Z"/></svg></span>
+      </a>
+    </div>
+    <button type="button" class="fab-main" id="fabMain" aria-haspopup="true" aria-expanded="false" aria-controls="fabActions" aria-label="Quick contact actions">
+      <span class="fab-pulse" aria-hidden="true"></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7V4Z"/></svg>
+    </button>
+  </div>
 
 <script src="https://assets.calendly.com/assets/external/widget.js" async></script>
 <script>
@@ -700,6 +767,7 @@
     rail.classList.toggle('open', open);
     scrim.classList.toggle('show', open);
     menuBtn.setAttribute('aria-expanded', String(open));
+    document.getElementById('fabWrap')?.classList.toggle('hide-fab', open);
   }
   menuBtn.addEventListener('click', () => openMenu(!rail.classList.contains('open')));
   scrim.addEventListener('click', () => openMenu(false));
@@ -733,29 +801,56 @@
     });
   });
 
-  // ---- Phone/WhatsApp popup ----
-  const phoneCard = document.getElementById('phoneCard');
-  if(phoneCard){
-    const setPhoneOpen = (open) => {
-      phoneCard.classList.toggle('open', open);
-      phoneCard.setAttribute('aria-expanded', String(open));
+  // ---- Phone/WhatsApp & LinkedIn dropdown cards ----
+  const dropdownCards = [];
+  function initDropdownCard(id){
+    const card = document.getElementById(id);
+    if(!card) return;
+    const setOpen = (open) => {
+      card.classList.toggle('open', open);
+      card.setAttribute('aria-expanded', String(open));
+      if(open) dropdownCards.forEach(c => { if(c !== card) c.classList.remove('open'), c.setAttribute('aria-expanded','false'); });
     };
-    phoneCard.addEventListener('click', (e) => {
+    card.addEventListener('click', (e) => {
       if(e.target.closest('.phone-menu')) return;
-      setPhoneOpen(!phoneCard.classList.contains('open'));
+      setOpen(!card.classList.contains('open'));
     });
-    phoneCard.addEventListener('keydown', (e) => {
-      if(e.target !== phoneCard) return;
+    card.addEventListener('keydown', (e) => {
+      if(e.target !== card) return;
       if(e.key === 'Enter' || e.key === ' '){
         e.preventDefault();
-        setPhoneOpen(!phoneCard.classList.contains('open'));
+        setOpen(!card.classList.contains('open'));
       } else if(e.key === 'Escape'){
-        setPhoneOpen(false);
+        setOpen(false);
       }
     });
-    document.addEventListener('click', (e) => {
-      if(!phoneCard.contains(e.target)) setPhoneOpen(false);
+    dropdownCards.push(card);
+  }
+  initDropdownCard('phoneCard');
+  initDropdownCard('linkedinCard');
+  document.addEventListener('click', (e) => {
+    dropdownCards.forEach(card => {
+      if(!card.contains(e.target)) card.classList.remove('open'), card.setAttribute('aria-expanded','false');
     });
+  });
+
+  // ---- Floating quick actions ----
+  const fabWrap = document.getElementById('fabWrap');
+  const fabMain = document.getElementById('fabMain');
+  if(fabWrap && fabMain){
+    const setFabOpen = (open) => {
+      fabWrap.classList.toggle('open', open);
+      fabMain.setAttribute('aria-expanded', String(open));
+    };
+    fabMain.addEventListener('click', () => setFabOpen(!fabWrap.classList.contains('open')));
+    document.addEventListener('click', (e) => {
+      if(!fabWrap.contains(e.target)) setFabOpen(false);
+    });
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape') setFabOpen(false);
+    });
+    fabWrap.querySelectorAll('.fab-actions a, .fab-actions button').forEach(el =>
+      el.addEventListener('click', () => setTimeout(() => setFabOpen(false), 150)));
   }
 </script>
 </body>
