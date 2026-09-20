@@ -232,6 +232,17 @@
   .cc .l{font-size:12px;color:var(--muted)}
   .cc .v{font-weight:600;font-size:14.5px;word-break:break-word}
   .cc-cal{grid-column:1 / -1;background:var(--accent-soft);border-color:var(--accent)}
+  .cc-phone{position:relative;cursor:pointer;user-select:none}
+  .cc-phone .chev{margin-left:auto;width:14px;height:14px;fill:var(--muted);flex:none;transition:transform .18s}
+  .cc-phone.open .chev{transform:rotate(180deg)}
+  .cc-phone.open{border-color:var(--accent)}
+  .phone-menu{position:absolute;left:0;right:0;top:calc(100% + 8px);background:var(--surface);border:1px solid var(--line-strong);border-radius:12px;padding:6px;box-shadow:0 12px 28px rgba(0,0,0,.35);z-index:20;opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .16s,transform .16s}
+  .cc-phone.open .phone-menu{opacity:1;transform:translateY(0);pointer-events:auto}
+  .phone-menu a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;text-decoration:none;color:var(--text);font-size:14px;font-weight:600}
+  .phone-menu a:hover{background:var(--surface-2)}
+  .phone-menu svg{width:18px;height:18px;flex:none}
+  .phone-menu .call-opt svg{fill:var(--accent)}
+  .phone-menu .wa-opt svg{fill:#25d366}
   .foot-note{margin-top:34px;color:var(--muted);font-size:13px}
 
   /* ---------- COVER (landing splash) ---------- */
@@ -621,10 +632,21 @@
           <svg viewBox="0 0 24 24"><path d="M2 4h20a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm10 7.2 8-5.2H4l8 5.2Zm0 2.3L3 7.6V18h18V7.6l-9 5.9Z"/></svg>
           <div><div class="l">Email</div><div class="v">k.g.i.d.perera@gmail.com</div></div>
         </a>
-        <a class="cc" href="tel:+46764432825">
+        <div class="cc cc-phone" id="phoneCard" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">
           <svg viewBox="0 0 24 24"><path d="M6.6 10.8a15.9 15.9 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.3.2 2.5.57 3.6a1 1 0 0 1-.25 1L6.6 10.8Z"/></svg>
-          <div><div class="l">Phone</div><div class="v">+46 76 443 28 25</div></div>
-        </a>
+          <div><div class="l">Phone &amp; WhatsApp</div><div class="v">+46 76 443 28 25</div></div>
+          <svg class="chev" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+          <div class="phone-menu" id="phoneMenu">
+            <a class="call-opt" href="tel:+46764432825">
+              <svg viewBox="0 0 24 24"><path d="M6.6 10.8a15.9 15.9 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.3.2 2.5.57 3.6a1 1 0 0 1-.25 1L6.6 10.8Z"/></svg>
+              Call
+            </a>
+            <a class="wa-opt" href="https://wa.me/46764432825" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><path d="M17.5 14.4c-.3-.1-1.6-.8-1.9-.9-.2-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.2.2-.3.2-.5.1-.3-.1-1.2-.4-2.2-1.4-.8-.7-1.4-1.6-1.5-1.9-.2-.3 0-.4.1-.6l.4-.5c.1-.1.2-.3.2-.4.1-.2 0-.3 0-.5-.1-.1-.6-1.5-.8-2-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-1 1-1 2.3 0 1.4 1 2.7 1.1 2.9.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.6-.7 1.9-1.3.2-.6.2-1.1.2-1.3-.1-.1-.3-.2-.6-.3ZM12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.5A10 10 0 1 0 12 2Zm0 18.2c-1.6 0-3.2-.4-4.5-1.3l-.3-.2-3 .9.9-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Z"/></svg>
+              WhatsApp
+            </a>
+          </div>
+        </div>
         <a class="cc" href="https://www.linkedin.com/in/isara-perera-a43a0313a" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24"><path d="M4.98 3.5A2.5 2.5 0 1 1 0 3.5a2.5 2.5 0 0 1 4.98 0ZM.24 8.25h4.5V24H.24V8.25ZM8.24 8.25h4.32v2.15h.06c.6-1.14 2.07-2.34 4.26-2.34 4.56 0 5.4 3 5.4 6.9V24h-4.5v-6.9c0-1.65-.03-3.78-2.3-3.78-2.3 0-2.65 1.8-2.65 3.66V24h-4.5V8.25Z"/></svg>
           <div><div class="l">LinkedIn</div><div class="v">isara-perera</div></div>
@@ -710,6 +732,31 @@
       }
     });
   });
+
+  // ---- Phone/WhatsApp popup ----
+  const phoneCard = document.getElementById('phoneCard');
+  if(phoneCard){
+    const setPhoneOpen = (open) => {
+      phoneCard.classList.toggle('open', open);
+      phoneCard.setAttribute('aria-expanded', String(open));
+    };
+    phoneCard.addEventListener('click', (e) => {
+      if(e.target.closest('.phone-menu')) return;
+      setPhoneOpen(!phoneCard.classList.contains('open'));
+    });
+    phoneCard.addEventListener('keydown', (e) => {
+      if(e.target !== phoneCard) return;
+      if(e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        setPhoneOpen(!phoneCard.classList.contains('open'));
+      } else if(e.key === 'Escape'){
+        setPhoneOpen(false);
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if(!phoneCard.contains(e.target)) setPhoneOpen(false);
+    });
+  }
 </script>
 </body>
 </html>
