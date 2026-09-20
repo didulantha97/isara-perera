@@ -240,11 +240,39 @@
     background:var(--accent);
     display:flex;align-items:center;justify-content:center;
     padding:5vh 6vw;
+    overflow:hidden;
     transition:opacity .45s ease;
   }
   @media (max-width:760px){.cover{overflow-y:auto;padding:calc(env(safe-area-inset-top,0px) + 18px) 5vw calc(env(safe-area-inset-bottom,0px) + 18px)}}
   .cover.closing{opacity:0;pointer-events:none}
+  .cover-bubbles{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .cover-bubbles .bub{
+    position:absolute;border-radius:50%;
+    background:radial-gradient(circle at 30% 26%, rgba(255,255,255,.95), rgba(255,255,255,.18) 45%, rgba(255,255,255,.04) 75%);
+    border:1px solid rgba(255,255,255,.45);
+    box-shadow:inset -8px -8px 16px rgba(0,0,0,.08), inset 6px 6px 14px rgba(255,255,255,.6), 0 8px 18px rgba(0,0,0,.12);
+  }
+  .cover-bubbles .bub::after{
+    content:"";position:absolute;inset:0;border-radius:50%;
+    background:conic-gradient(from 120deg, rgba(255,110,190,.22), rgba(110,200,255,.22), rgba(255,225,110,.22), rgba(255,110,190,.22));
+    mix-blend-mode:overlay;opacity:.6;
+  }
+  .cover-bubbles .b1{width:64px;height:64px;top:10%;left:8%;animation:bfloat1 14s ease-in-out infinite}
+  .cover-bubbles .b2{width:104px;height:104px;top:55%;left:4%;animation:bfloat2 18s ease-in-out infinite -4s}
+  .cover-bubbles .b3{width:42px;height:42px;top:18%;right:11%;animation:bfloat3 11s ease-in-out infinite -6s}
+  .cover-bubbles .b4{width:84px;height:84px;bottom:8%;right:6%;animation:bfloat4 16s ease-in-out infinite -2s}
+  .cover-bubbles .b5{width:30px;height:30px;top:40%;left:22%;animation:bfloat5 9s ease-in-out infinite -3s}
+  .cover-bubbles .b6{width:52px;height:52px;bottom:20%;left:42%;animation:bfloat6 13s ease-in-out infinite -7s}
+  @keyframes bfloat1{0%,100%{transform:translate(0,0)}25%{transform:translate(34px,-46px)}50%{transform:translate(-8px,-78px)}75%{transform:translate(-38px,-24px)}}
+  @keyframes bfloat2{0%,100%{transform:translate(0,0)}30%{transform:translate(50px,-28px)}60%{transform:translate(22px,-66px)}}
+  @keyframes bfloat3{0%,100%{transform:translate(0,0)}40%{transform:translate(-28px,34px)}70%{transform:translate(-50px,-12px)}}
+  @keyframes bfloat4{0%,100%{transform:translate(0,0)}35%{transform:translate(-32px,-38px)}65%{transform:translate(12px,-60px)}}
+  @keyframes bfloat5{0%,100%{transform:translate(0,0)}50%{transform:translate(28px,-50px)}}
+  @keyframes bfloat6{0%,100%{transform:translate(0,0)}45%{transform:translate(-22px,-55px)}}
+  @media (prefers-reduced-motion:reduce){.cover-bubbles .bub{animation:none}}
+  @media (max-width:760px){.cover-bubbles .b2,.cover-bubbles .b4,.cover-bubbles .b6{display:none}}
   .cover-card{
+    position:relative;z-index:1;
     width:100%;max-width:1020px;max-height:90vh;
     background:var(--bg);border-radius:30px;
     display:flex;align-items:center;gap:40px;
@@ -298,6 +326,14 @@
 
   <!-- LANDING COVER -->
   <div class="cover" id="cover">
+    <div class="cover-bubbles" aria-hidden="true">
+      <span class="bub b1"></span>
+      <span class="bub b2"></span>
+      <span class="bub b3"></span>
+      <span class="bub b4"></span>
+      <span class="bub b5"></span>
+      <span class="bub b6"></span>
+    </div>
     <div class="cover-card">
       <div class="cover-photo-wrap">
         <div class="cover-photo"><img id="coverImg" alt="Isara Perera"></div>
