@@ -101,7 +101,9 @@
     transition:background .15s ease;
   }
   nav.railnav a .dot{width:6px;height:6px;border-radius:50%;background:var(--rail-ink);opacity:.35;transition:opacity .15s,transform .15s}
+  nav.railnav a .nav-text{display:inline-block;transition:transform .18s ease;transform-origin:left center}
   nav.railnav a:hover{background:var(--rail-line)}
+  nav.railnav a:hover .nav-text{transform:scale(1.12)}
   nav.railnav a.active{background:var(--bg);color:var(--accent)}
   nav.railnav a.active .dot{background:var(--accent);opacity:1;transform:scale(1.4)}
 
@@ -139,13 +141,15 @@
   section{max-width:var(--maxw);margin:0 auto;padding:74px 0;border-bottom:1px solid var(--line)}
   section:last-child{border-bottom:0}
   .eyebrow{font-size:12.5px;font-weight:600;color:var(--accent);letter-spacing:.02em;margin:0 0 14px}
-  h2.title{font-size:clamp(28px,4.4vw,40px);font-weight:700;margin:0 0 8px;line-height:1.08}
+  h2.title{font-size:clamp(28px,4.4vw,40px);font-weight:700;margin:0 0 8px;line-height:1.08;display:inline-block;transition:transform .22s ease;transform-origin:left center}
+  h2.title:hover{transform:scale(1.05)}
   .lead{color:var(--muted);max-width:62ch}
 
   /* HERO */
   #home{min-height:calc(100vh - var(--pad-top));display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid var(--line);padding-top:40px}
   .hero-name{font-size:clamp(40px,8vw,72px);font-weight:700;line-height:.98;margin:0}
-  .hero-name b{color:var(--accent);font-weight:700}
+  .hero-name b{color:var(--accent);font-weight:700;display:inline-block;transition:transform .25s ease;transform-origin:left center}
+  .hero-name b:hover{transform:scale(1.06)}
   .hero-role{font-size:clamp(16px,2.4vw,20px);color:var(--muted);font-weight:500;margin:16px 0 0}
   .hero-blurb{margin:22px 0 0;max-width:60ch;color:var(--text)}
   .hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
@@ -226,11 +230,13 @@
   .job:last-child{padding-bottom:0}
   .job::before{content:"";position:absolute;left:-24.5px;top:6px;width:11px;height:11px;border-radius:50%;background:var(--bg);border:2px solid var(--accent)}
   .job .top{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:baseline}
-  .job .jt{font-family:"Space Grotesk";font-weight:600;font-size:17.5px;margin:0}
+  .job .jt{font-family:"Space Grotesk";font-weight:600;font-size:17.5px;margin:0;display:inline-block;transition:transform .2s ease;transform-origin:left center}
+  .job .jt:hover{transform:scale(1.05)}
   .job .co{color:var(--accent);font-weight:600;font-size:14.5px;margin:3px 0 0}
   .job .when{color:var(--muted);font-size:13px;font-weight:500;white-space:nowrap}
   .job ul{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:8px}
-  .job li{position:relative;padding-left:18px;color:var(--muted);font-size:14.5px}
+  .job li{position:relative;padding-left:18px;color:var(--muted);font-size:14.5px;transition:transform .18s ease;transform-origin:left center}
+  .job li:hover{transform:scale(1.035)}
   .job li::before{content:"";position:absolute;left:0;top:9px;width:6px;height:6px;border-radius:1px;background:var(--accent);opacity:.7}
   .job li b{color:var(--text);font-weight:600}
 
@@ -364,7 +370,8 @@
   .cover-text{flex:1;min-width:0}
   .cover-hi{color:var(--muted);font-weight:600;letter-spacing:.08em;font-size:15px;text-transform:uppercase;margin:0 0 10px}
   .cover-name{font-family:"Space Grotesk";font-weight:700;font-size:clamp(36px,4.8vw,54px);color:var(--text);margin:0;line-height:1.05}
-  .cover-name b{color:var(--accent)}
+  .cover-name b{color:var(--accent);display:inline-block;transition:transform .25s ease;transform-origin:left center}
+  .cover-name b:hover{transform:scale(1.06)}
   .cover-role{color:var(--accent);font-weight:600;font-size:18px;margin:10px 0 0;text-wrap:balance}
   .cover-blurb{color:var(--muted);margin:18px 0 0;max-width:48ch;font-size:17px}
   .cover-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
