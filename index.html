@@ -220,6 +220,8 @@
   .chip{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--text);font-weight:500;background:var(--surface);border:1px solid var(--line-strong);border-radius:999px;padding:7px 14px 7px 11px;transition:border-color .15s,transform .12s,background .15s}
   .chip:hover{border-color:#0a66c2;transform:translateY(-1px);background:var(--surface-2)}
   .chip::before{content:"";width:14px;height:14px;flex:none;background:#0a66c2;-webkit-mask:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M4.98%203.5A2.5%202.5%200%201%201%200%203.5a2.5%202.5%200%200%201%204.98%200ZM.24%208.25h4.5V24H.24V8.25ZM8.24%208.25h4.32v2.15h.06c.6-1.14%202.07-2.34%204.26-2.34%204.56%200%205.4%203%205.4%206.9V24h-4.5v-6.9c0-1.65-.03-3.78-2.3-3.78-2.3%200-2.65%201.8-2.65%203.66V24h-4.5V8.25Z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M4.98%203.5A2.5%202.5%200%201%201%200%203.5a2.5%202.5%200%200%201%204.98%200ZM.24%208.25h4.5V24H.24V8.25ZM8.24%208.25h4.32v2.15h.06c.6-1.14%202.07-2.34%204.26-2.34%204.56%200%205.4%203%205.4%206.9V24h-4.5v-6.9c0-1.65-.03-3.78-2.3-3.78-2.3%200-2.65%201.8-2.65%203.66V24h-4.5V8.25Z'/%3E%3C/svg%3E") center/contain no-repeat}
+  .chip-ifs:hover{border-color:#003da5}
+  .chip-ifs::before{content:"IFS";width:auto;height:auto;-webkit-mask:none;mask:none;background:#003da5;color:#fff;font-size:9px;font-weight:800;letter-spacing:.03em;line-height:1;padding:4px 6px;border-radius:5px}
   .edu{margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}
   .edu .d{font-family:"Space Grotesk";font-weight:600;font-size:16px}
   .edu .s{color:var(--muted);font-size:14px;margin-top:2px}
@@ -665,7 +667,7 @@
           <span class="chip">Software Design: Requirements to Release</span>
           <span class="chip">Web Components &amp; Modularization</span>
           <span class="chip">Python for OOP</span>
-          <span class="chip">IFS Applications 10 Essentials (ERP)</span>
+          <span class="chip chip-ifs">IFS Applications 10 Essentials (ERP)</span>
         </div>
       </div>
 
