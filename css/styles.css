@@ -205,6 +205,7 @@
     .hero-photo{width:150px;height:150px;border-radius:20px}
   }
   .btn{display:inline-flex;align-items:center;gap:9px;text-decoration:none;font-weight:600;font-size:14.5px;padding:12px 20px;border-radius:999px;transition:transform .12s,background .15s,border-color .15s;background:transparent;border:none;font-family:inherit;cursor:pointer}
+  .btn svg{width:16px;height:16px;flex:none}
   .btn.solid{background:var(--accent);color:var(--on-accent)}
   .btn.solid:hover{transform:translateY(-2px)}
   .btn.ghost{border:1px solid var(--line-strong);color:var(--text)}
