@@ -1,0 +1,97 @@
+/* ============================================================
+   BLOG PAGE — builds on the tokens in styles.css
+   ============================================================ */
+.blog-page{border-bottom:0;min-height:100vh}
+
+/* Filters */
+.blog-filters{display:flex;flex-wrap:wrap;gap:8px;margin:28px 0 0}
+.blog-filter{font:inherit;font-size:13px;font-weight:600;color:var(--muted);background:transparent;border:1px solid var(--line-strong);border-radius:999px;padding:6px 14px;cursor:pointer;transition:border-color .15s,color .15s,background .15s}
+.blog-filter:hover{border-color:var(--accent);color:var(--accent)}
+.blog-filter[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+
+/* Cards */
+.blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;margin-top:28px}
+.blog-card{display:flex;flex-direction:column;gap:10px;text-decoration:none;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px 22px 20px;transition:transform .15s,border-color .15s,box-shadow .15s}
+.blog-card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 14px 30px rgba(0,0,0,.28)}
+.blog-card-title{font-size:20px;line-height:1.25;margin:0}
+.blog-card:hover .blog-card-title{color:var(--accent)}
+.blog-summary{color:var(--muted);font-size:14.5px;margin:0;flex:1}
+.blog-meta{font-size:12.5px;font-weight:600;color:var(--muted);margin:0;letter-spacing:.02em}
+.blog-ext{color:var(--accent);margin-left:6px}
+.blog-tags{display:flex;flex-wrap:wrap;gap:6px}
+.blog-tag{font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:3px 10px}
+.blog-empty{color:var(--muted);margin-top:28px}
+
+/* Single post */
+.blog-post{max-width:68ch}
+.blog-back{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;text-decoration:none;color:var(--muted);margin-bottom:28px;transition:color .15s}
+.blog-back:hover{color:var(--accent)}
+.blog-back svg{width:16px;height:16px}
+.blog-post-title{font-size:clamp(30px,5vw,46px);line-height:1.08;margin:10px 0 16px}
+.blog-post .blog-tags{margin-bottom:34px}
+
+.blog-body{font-size:17px;line-height:1.75}
+.blog-body h2{font-size:26px;line-height:1.2;margin:42px 0 12px}
+.blog-body h3{font-size:20px;margin:32px 0 10px}
+.blog-body p,.blog-body ul,.blog-body ol{margin:0 0 20px}
+.blog-body li{margin-bottom:6px}
+.blog-body a{color:var(--accent);text-underline-offset:3px}
+.blog-body img{max-width:100%;height:auto;border-radius:12px;border:1px solid var(--line)}
+.blog-body blockquote{margin:28px 0;padding:4px 0 4px 20px;border-left:3px solid var(--accent);color:var(--muted);font-style:italic}
+.blog-body code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.blog-body pre{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;overflow-x:auto;margin:0 0 24px}
+.blog-body pre code{background:none;border:0;padding:0;font-size:14px;line-height:1.6}
+.blog-body h2[id]{scroll-margin-top:24px}
+
+/* Long-form article components */
+.blog-lead{font-size:19px;color:var(--muted)}
+.blog-equation{margin:0 0 28px;padding:18px 20px;border:1px solid var(--accent);background:var(--accent-soft);border-radius:12px;font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:17px;line-height:1.5}
+.blog-toc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 22px 14px;margin:0 0 28px}
+.blog-toc strong{display:block;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.blog-toc ol{columns:2;column-gap:28px;margin:0;font-size:15px}
+.blog-toc li{break-inside:avoid;margin-bottom:4px}
+.blog-toc a{text-decoration:none}
+.blog-toc a:hover{text-decoration:underline}
+
+.blog-callout{margin:0 0 22px;padding:14px 18px;border-left:3px solid var(--accent);background:var(--surface);border-radius:0 10px 10px 0;font-size:16px}
+.blog-callout.tip{border-left-color:#3ecf8e}
+.blog-callout.warning{border-left-color:#ff9f43}
+.blog-callout strong:first-child{color:var(--text)}
+
+.blog-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:0 0 24px}
+.blog-cards > div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:14.5px;line-height:1.55;color:var(--muted)}
+.blog-cards strong{display:block;color:var(--text);font-size:15.5px;margin-bottom:4px}
+.blog-cards .num{display:block;font-family:"Space Grotesk",sans-serif;font-size:24px;font-weight:700;color:var(--accent);line-height:1.2}
+
+.blog-table{overflow-x:auto;margin:0 0 24px;border:1px solid var(--line);border-radius:12px}
+.blog-table table{width:100%;border-collapse:collapse;font-size:14.5px;line-height:1.55}
+.blog-table th,.blog-table td{padding:10px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+.blog-table tr:last-child td{border-bottom:0}
+.blog-table th{background:var(--surface);font-weight:600;white-space:nowrap}
+
+.blog-checklist{list-style:none;padding-left:0}
+.blog-checklist li{position:relative;padding-left:30px}
+.blog-checklist li::before{content:"";position:absolute;left:0;top:.35em;width:16px;height:16px;border:1.5px solid var(--accent);border-radius:4px}
+
+.blog-sources{font-size:15px}
+.blog-note-small{font-size:14px;color:var(--muted)}
+
+/* Architecture diagram (inline SVG) */
+.blog-diagram{overflow-x:auto;margin:0 0 24px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.blog-diagram svg{display:block;width:100%;min-width:640px;height:auto}
+.blog-diagram .box{fill:var(--surface-2);stroke:var(--line-strong);stroke-width:2}
+.blog-diagram .box.hl{fill:var(--accent-soft);stroke:var(--accent)}
+.blog-diagram .t{font:600 17px "Space Grotesk",sans-serif;fill:var(--text)}
+.blog-diagram .s{font:500 14px Inter,sans-serif;fill:var(--muted)}
+.blog-diagram .ln{stroke:var(--muted);stroke-width:2}
+.blog-diagram .head{fill:var(--muted)}
+
+@media (max-width:900px){
+  .blog-page{padding-top:calc(var(--pad-top) + 96px)}
+  .blog-body h2[id]{scroll-margin-top:calc(var(--pad-top) + 110px)}
+}
+@media (max-width:640px){
+  .blog-grid{grid-template-columns:1fr}
+  .blog-body{font-size:16px}
+  .blog-toc ol{columns:1}
+}

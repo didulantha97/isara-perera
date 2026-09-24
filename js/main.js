@@ -22,6 +22,11 @@
   const coverImg = document.getElementById('coverImg');
   const moreBtn = document.getElementById('moreAboutBtn');
   if(avatarImg && coverImg) coverImg.src = avatarImg.src;
+  // Arriving at a section link (e.g. index.html#about from the blog) skips the cover.
+  if(cover && location.hash && location.hash !== '#home'){
+    document.body.classList.remove('cover-open');
+    cover.style.display = 'none';
+  }
   moreBtn?.addEventListener('click', () => {
     document.body.classList.remove('cover-open');
     cover.classList.add('closing');
@@ -46,12 +51,14 @@
     document.body.style.overflow = '';
     lastFocused?.focus?.();
   }
-  document.querySelectorAll('img.zoomable').forEach(img => {
-    img.addEventListener('click', () => openLightbox(img.currentSrc || img.src, img.alt));
-  });
-  lightbox.addEventListener('click', (e) => { if(e.target === lightbox || e.target === lightboxImg) closeLightbox(); });
-  lightboxClose.addEventListener('click', closeLightbox);
-  document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox(); });
+  if(lightbox){
+    document.querySelectorAll('img.zoomable').forEach(img => {
+      img.addEventListener('click', () => openLightbox(img.currentSrc || img.src, img.alt));
+    });
+    lightbox.addEventListener('click', (e) => { if(e.target === lightbox || e.target === lightboxImg) closeLightbox(); });
+    lightboxClose.addEventListener('click', closeLightbox);
+    document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox(); });
+  }
 
   // ---- Mobile menu ----
   const rail = document.getElementById('rail');
@@ -80,7 +87,8 @@
       }
     });
   }, { rootMargin: '-45% 0px -50% 0px', threshold: 0 });
-  document.querySelectorAll('main section').forEach(s => obs.observe(s));
+  // Only sections that have a matching nav link (other pages keep their own active link).
+  document.querySelectorAll('main section').forEach(s => { if(map.has(s.id)) obs.observe(s); });
 
   // ---- Calendly scheduling popup ----
   document.querySelectorAll('.calendly-trigger').forEach(el => {
