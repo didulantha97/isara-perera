@@ -328,6 +328,7 @@
   .msg-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .msg-actions .btn:disabled{opacity:.6;cursor:default;transform:none}
   .msg-status{margin:0;font-size:13px;color:var(--muted)}
+  .msg-note{margin:0;font-size:12px;color:var(--muted)}
   .msg-status.ok{color:var(--accent)}
   .msg-status.err{color:#ff8a7a}
   @media (max-width:640px){

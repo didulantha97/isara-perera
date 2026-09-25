@@ -7,5 +7,5 @@
    Leave the placeholder in place to switch tracking off.
    ============================================================ */
 window.ANALYTICS_CONFIG = {
-  endpoint: 'https://script.google.com/macros/s/AKfycbxRDCjJE8j99Yw2r0UMQfJ--OZdMCDERf79KdXHcXu5RP2mYbcyd-5iIkM1p9bBtH8vwQ/exec'
+  endpoint: 'https://script.google.com/macros/s/AKfycbx-vQsZMYo8Vi_R0aACjTmNmq4jmjM9o64Pub6bV1cMPYo543Rrvksk-CPCGuyCueuYfw/exec'
 };

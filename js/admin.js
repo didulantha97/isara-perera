@@ -5,6 +5,8 @@
    (analytics/apps-script.gs), which checks the code server-side —
    the code and the data are never in this repo. Two tabs:
    Analytics, and Messages (reply, mark replied, archive, delete).
+   A message from a visitor who allowed analytics carries their
+   visitor id, so it shows what they viewed before writing.
    Shortcut: bookmark admin.html#code=YOUR-CODE to unlock directly.
    Event text comes from visitors, so everything rendered goes
    through esc().
@@ -79,7 +81,6 @@
     document.querySelectorAll('.tabs [role=tab]').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
     $('overviewPanel').hidden = name !== 'overview';
     $('messagesPanel').hidden = name !== 'messages';
-    $('rangeSeg').hidden = name !== 'overview';
     $('dashNote').hidden = name !== 'overview';
     store(TAB_KEY, name, sessionStorage);
   }
@@ -354,30 +355,40 @@
     }
   }
 
-  function renderSessions(){
-    const list = [...data.sessions].sort((a, b) => b.start.localeCompare(a.start));
-    const visitsPer = new Map();
-    list.forEach(s => visitsPer.set(s.visitor, (visitsPer.get(s.visitor) || 0) + 1));
-    if(!list.length){ $('sessionList').innerHTML = '<p class="empty">No visits yet.</p>'; $('moreSessions').hidden = true; return; }
-    $('sessionList').innerHTML = list.slice(0, sessionsShown).map(s => {
-      const contacted = s.events.some(e => e.type === 'click' && contactKind(e));
-      const badges = [
-        s.visit > 1 ? `<span class="badge">visit #${s.visit}</span>` : '<span class="badge">new</span>',
-        contacted ? '<span class="badge hot">contacted</span>' : ''
-      ].join('');
-      return `
+  // Name of whoever sent a message with this visitor id (only visitors who allowed analytics are linked).
+  function senderName(visitor){
+    const m = messages?.find(x => x.visitor_id && x.visitor_id === visitor);
+    return m ? m.name : null;
+  }
+  const newestFirst = list => [...list].sort((a, b) => b.start.localeCompare(a.start));
+
+  function sessionHtml(s){
+    const count = data.sessions.filter(x => x.visitor === s.visitor).length;
+    const contacted = s.events.some(e => e.type === 'click' && contactKind(e));
+    const sender = senderName(s.visitor);
+    const badges = [
+      s.visit > 1 ? `<span class="badge">visit #${s.visit}</span>` : '<span class="badge">new</span>',
+      contacted ? '<span class="badge hot">contacted</span>' : '',
+      sender ? '<span class="badge hot">sent a message</span>' : ''
+    ].join('');
+    return `
         <details class="sess">
           <summary>
-            <span class="sess-who"><b>${esc(visitorName(s.visitor))}</b>${badges}</span>
+            <span class="sess-who"><b>${esc(sender || visitorName(s.visitor))}</b>${badges}</span>
             <span class="sess-meta">${esc(fmtDateTime(s.start))} · ${esc(tzLabel(s.tz))} · ${esc(s.device)} ${esc(s.os)} · ${esc(s.referrer || 'direct')}</span>
             <span class="sess-stats">${s.pages} page${s.pages === 1 ? '' : 's'} · ${s.clicks} click${s.clicks === 1 ? '' : 's'} · ${fmtDur(s.duration)}</span>
           </summary>
           <ol class="timeline">
             ${s.events.map(e => { const [kind, html] = describe(e); return `<li class="ev ev-${kind}"><time>${esc(fmtTime(e.created_at))}</time><span>${html}</span></li>`; }).join('')}
           </ol>
-          <p class="sess-foot muted">${esc(s.browser)} · ${esc(s.lang || '')} · ${visitsPer.get(s.visitor)} visit${visitsPer.get(s.visitor) === 1 ? '' : 's'} in this range</p>
+          <p class="sess-foot muted">${esc(s.browser)} · ${esc(s.lang || '')} · ${count} visit${count === 1 ? '' : 's'} in this range</p>
         </details>`;
-    }).join('');
+  }
+
+  function renderSessions(){
+    const list = newestFirst(data.sessions);
+    if(!list.length){ $('sessionList').innerHTML = '<p class="empty">No visits yet.</p>'; $('moreSessions').hidden = true; return; }
+    $('sessionList').innerHTML = list.slice(0, sessionsShown).map(sessionHtml).join('');
     $('moreSessions').hidden = list.length <= sessionsShown;
   }
 
@@ -457,6 +468,7 @@
           </header>
           <p class="msg-body">${esc(m.message)}</p>
           ${meta ? `<p class="msg-meta">${esc(meta)}</p>` : ''}
+          ${visitsHtml(m)}
           <div class="msg-actions">
             <a class="btn solid sm" href="${esc(r.mailto)}" data-act="reply">Reply</a>
             <a class="btn ghost sm" href="${esc(r.gmail)}" target="_blank" rel="noopener" data-act="reply">Reply in Gmail</a>
@@ -469,6 +481,23 @@
           </div>
         </article>`;
     }).join('');
+  }
+
+  // What the sender did on the site, when they had allowed analytics.
+  function visitsHtml(m){
+    if(!m.visitor_id) return '';
+    const list = newestFirst(data.sessions.filter(s => s.visitor === m.visitor_id));
+    if(!list.length){
+      const range = $('rangeSeg').querySelector('[aria-pressed=true]').textContent;
+      return `<p class="msg-meta">Their visits fall outside the selected range (${esc(range)}). Pick a longer range above to see them.</p>`;
+    }
+    const pages = list.reduce((a, s) => a + s.pages, 0);
+    const time = list.reduce((a, s) => a + s.duration, 0);
+    return `
+          <details class="msg-visits">
+            <summary>What they viewed · ${list.length} visit${list.length === 1 ? '' : 's'}, ${pages} page${pages === 1 ? '' : 's'}, ${fmtDur(time)}</summary>
+            ${list.map(sessionHtml).join('')}
+          </details>`;
   }
 
   // Send a change to the backend. Returns true when it was saved.

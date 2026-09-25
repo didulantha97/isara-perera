@@ -3,8 +3,10 @@
    Floating button (icon + label on desktop, icon only on mobile)
    that opens a small message form. Messages go to the same Google
    Apps Script as the analytics (analytics/apps-script.gs), which
-   saves them in the "messages" tab of the sheet. Independent of
-   analytics consent: the visitor chooses to send it.
+   saves them in the "messages" tab of the sheet. Anyone can send
+   one. Only if the visitor already allowed analytics is their
+   anonymous visitor id sent along (the form says so), so the Admin
+   Dashboard can show what they viewed before writing.
    On the home page it sits above the quick-actions button.
    Usage: load js/analytics-config.js, then
           <script src="js/components/message.js"></script>
@@ -13,6 +15,9 @@
 (function(){
   const endpoint = (window.ANALYTICS_CONFIG || {}).endpoint || '';
   if(!/^https:\/\/script\.google\.com\//.test(endpoint)) return;
+  const read = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
+  // The analytics id, only when the visitor said yes to stats (tracker.js creates it after consent).
+  const visitorId = () => read('cv-analytics-consent') === 'granted' ? read('cv-vid') : null;
 
   const ICON = '<span class="msg-fab-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 21.7a.5.5 0 0 0 .9 0l6.5-19a.5.5 0 0 0-.6-.6l-19 6.5a.5.5 0 0 0 0 .9l7.9 3.2a2 2 0 0 1 1.1 1.1z"/><path d="M21.9 2.1 10.9 13.1"/></svg></span>';
 
@@ -43,6 +48,7 @@
       <label>Name<input name="name" type="text" autocomplete="name" maxlength="100" required></label>
       <label>Email<input name="email" type="email" autocomplete="email" maxlength="200" required></label>
       <label>Message<textarea name="message" rows="4" maxlength="5000" required></textarea></label>
+      <p class="msg-note" hidden>Since you allowed site stats, the pages you viewed here are attached for context.</p>
       <label class="msg-hp" aria-hidden="true">Website<input name="website" type="text" tabindex="-1" autocomplete="off"></label>
       <div class="msg-actions">
         <button type="submit" class="btn solid">Send message</button>
@@ -63,7 +69,10 @@
     panel.hidden = !open;
     fab.classList.toggle('is-hidden', open);
     fab.setAttribute('aria-expanded', String(open));
-    if(open) form.elements.name.focus();
+    if(open){
+      panel.querySelector('.msg-note').hidden = !visitorId();
+      form.elements.name.focus();
+    }
     else fab.focus({ preventScroll: true });
   }
   fab.addEventListener('click', () => setOpen(true));
@@ -96,6 +105,7 @@
         body: JSON.stringify({
           kind: 'message', name, email, message,
           website: f.website.value,
+          visitor_id: visitorId(),
           page: location.pathname + location.search,
           lang: navigator.language,
           tz: Intl.DateTimeFormat().resolvedOptions().timeZone

@@ -205,3 +205,9 @@ code{background:var(--surface-2);padding:1px 6px;border-radius:6px;font-size:13p
   .msg-search{width:100%}
   .msg-toolbar .seg{overflow-x:auto;max-width:100%}
 }
+
+/* ---- A sender's visits, inside a message ---- */
+.msg-visits{margin-top:12px;border:1px solid var(--line);border-radius:10px;padding:0 12px}
+.msg-visits > summary{cursor:pointer;padding:10px 0;font-size:13px;font-weight:600;color:var(--accent)}
+.msg-visits[open] > summary{border-bottom:1px solid var(--line)}
+#messagesPanel{margin-top:16px}

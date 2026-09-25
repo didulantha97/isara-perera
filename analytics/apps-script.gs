@@ -30,10 +30,10 @@
 
 var SHEET = 'events';
 var MSG_SHEET = 'messages';
-var MSG_COLS = ['created_at', 'name', 'email', 'message', 'page', 'lang', 'tz', 'status', 'id'];
+var MSG_COLS = ['created_at', 'name', 'email', 'message', 'page', 'lang', 'tz', 'status', 'id', 'visitor_id'];
 var MSG_STATUSES = ['new', 'replied', 'archived'];
 var MAX_MSGS_READ = 500;       // newest messages sent to the dashboard
-var MSG_LIMITS = { name: 100, email: 200, message: 5000, page: 300, lang: 20, tz: 60 };
+var MSG_LIMITS = { name: 100, email: 200, message: 5000, page: 300, lang: 20, tz: 60, visitor_id: 64 };
 var MAX_MSGS_PER_HOUR = 30;    // site-wide cap so a bot can't flood the sheet
 var COLS = ['created_at', 'visitor_id', 'session_id', 'type', 'path', 'page_title', 'section', 'label', 'target',
   'referrer', 'device', 'browser', 'os', 'lang', 'tz', 'duration_ms', 'scroll_pct', 'meta'];
@@ -85,7 +85,7 @@ function saveMessage(m) {
   if (sent >= MAX_MSGS_PER_HOUR) return json({ ok: false, error: 'Too many messages right now. Please email me instead.' });
 
   var fields = { name: name, email: email, message: message, page: m.page, lang: m.lang, tz: m.tz,
-    status: 'new', id: Utilities.getUuid() };
+    status: 'new', id: Utilities.getUuid(), visitor_id: m.visitor_id };
   var row = MSG_COLS.map(function (c) { return c === 'created_at' ? new Date() : text(fields[c], MSG_LIMITS[c] || 60); });
 
   var lock = LockService.getScriptLock();

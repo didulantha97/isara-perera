@@ -3,8 +3,9 @@
    Asks first. Only after a visitor clicks "Allow" does it log page
    views, sections reached, clicks, blog searches and time on page
    to the Google Sheet behind analytics/apps-script.gs. No cookies,
-   no IP, no names — an anonymous id in localStorage, created only
-   after consent. Results: admin.html.
+   no IP — an anonymous id in localStorage, created only after
+   consent. If that visitor later sends a message, the id goes with
+   it (js/components/message.js), linking the two. Results: admin.html.
    Usage: load js/analytics-config.js then this, after main.js.
    Opt this device out: visit any page with ?notrack (admin.html
    does it for you when you unlock it).
@@ -30,7 +31,7 @@
     box.setAttribute('role', 'region');
     box.setAttribute('aria-label', 'Privacy choice');
     box.innerHTML = `
-      <p>Can I keep anonymous stats on which pages and buttons you use? It helps me improve this site. No cookies, no names, no IP addresses.</p>
+      <p>Can I keep anonymous stats on which pages and buttons you use? It helps me improve this site. No cookies, no IP addresses, and no names unless you send me a message.</p>
       <div class="privacy-actions">
         <button type="button" class="privacy-btn" data-deny>No thanks</button>
         <button type="button" class="privacy-btn solid" data-allow>Allow</button>
