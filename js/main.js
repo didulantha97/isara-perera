@@ -204,3 +204,96 @@
     skillModalClose.addEventListener('click', closeSkillModal);
     document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && skillModal.classList.contains('open')) closeSkillModal(); });
   }
+
+  // ---- Collapsible experience cards ----
+  (function initJobCards(){
+    const timeline = document.querySelector('#experience .timeline');
+    if(!timeline) return;
+    const jobs = [...timeline.querySelectorAll('.job')];
+    const chevron = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+
+    const setOpen = (job, open) => {
+      job.classList.toggle('open', open);
+      job.querySelector('.top').setAttribute('aria-expanded', String(open));
+    };
+
+    jobs.forEach((job, idx) => {
+      const top = job.querySelector('.top');
+      const list = job.querySelector('ul');
+      if(!top || !list) return;
+      const bodyId = 'job-body-' + idx;
+
+      // Wrap the bullet list so it can animate open/closed
+      const body = document.createElement('div');
+      body.className = 'job-body';
+      body.id = bodyId;
+      const inner = document.createElement('div');
+      inner.className = 'job-inner';
+      list.replaceWith(body);
+      inner.appendChild(list);
+      body.appendChild(inner);
+      list.querySelectorAll('li').forEach((li, i) => li.style.setProperty('--i', i));
+
+      // Highlight count chip shown while collapsed
+      const count = document.createElement('span');
+      count.className = 'job-count';
+      count.textContent = list.children.length + ' highlights';
+      top.firstElementChild.appendChild(count);
+
+      const chev = document.createElement('span');
+      chev.className = 'job-chev';
+      chev.innerHTML = chevron;
+      top.appendChild(chev);
+
+      top.setAttribute('role', 'button');
+      top.setAttribute('tabindex', '0');
+      top.setAttribute('aria-controls', bodyId);
+      job.classList.add('collapsible');
+      setOpen(job, idx === 0);
+
+      // A closed card opens from a click anywhere on it; an open card closes from its header.
+      // Ignore the extra clicks of a double-click / rapid taps so they don't cancel each other out.
+      let lastToggle = 0;
+      const toggle = () => {
+        const now = Date.now();
+        if(now - lastToggle < 350) return;
+        lastToggle = now;
+        setOpen(job, !job.classList.contains('open'));
+      };
+      job.addEventListener('click', (e) => {
+        if(e.detail > 1) return;
+        if(job.classList.contains('open') && !top.contains(e.target)) return;
+        toggle();
+      });
+      top.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          toggle();
+        }
+      });
+    });
+
+    // Expand / collapse all
+    const tools = document.createElement('div');
+    tools.className = 'job-tools';
+    const toggleAll = document.createElement('button');
+    toggleAll.type = 'button';
+    const syncLabel = () => {
+      const allOpen = jobs.every(j => j.classList.contains('open'));
+      toggleAll.textContent = allOpen ? 'Collapse all' : 'Expand all';
+    };
+    toggleAll.addEventListener('click', () => {
+      const allOpen = jobs.every(j => j.classList.contains('open'));
+      jobs.forEach(j => setOpen(j, !allOpen));
+      syncLabel();
+    });
+    timeline.addEventListener('click', syncLabel);
+    timeline.addEventListener('keydown', syncLabel);
+    syncLabel();
+    tools.appendChild(toggleAll);
+    timeline.before(tools);
+    timeline.classList.add('enhanced');
+
+    // Always print the full CV
+    window.addEventListener('beforeprint', () => jobs.forEach(j => j.classList.add('open')));
+  })();
