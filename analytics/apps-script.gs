@@ -1,7 +1,8 @@
 /* ============================================================
    SITE ANALYTICS BACKEND — Google Apps Script + Google Sheet
-   Stores events from js/tracker.js in the sheet and hands them to
-   admin.html only when the right access code is given. The code
+   Stores events from js/tracker.js in the "events" tab and contact
+   form messages from js/contact-form.js in the "messages" tab, and
+   hands events to admin.html only when the right access code is given. The code
    lives in Script Properties, never in the website's repo.
 
    SETUP (one time, ~5 minutes)
@@ -26,6 +27,10 @@
  */
 
 var SHEET = 'events';
+var MSG_SHEET = 'messages';
+var MSG_COLS = ['created_at', 'name', 'email', 'message', 'page', 'lang', 'tz'];
+var MSG_LIMITS = { name: 100, email: 200, message: 5000, page: 300, lang: 20, tz: 60 };
+var MAX_MSGS_PER_HOUR = 30;    // site-wide cap so a bot can't flood the sheet
 var COLS = ['created_at', 'visitor_id', 'session_id', 'type', 'path', 'page_title', 'section', 'label', 'target',
   'referrer', 'device', 'browser', 'os', 'lang', 'tz', 'duration_ms', 'scroll_pct', 'meta'];
 var TYPES = ['page_view', 'section_view', 'click', 'search', 'page_leave'];
@@ -38,6 +43,7 @@ var LOCKOUT_SECONDS = 15 * 60; // …per 15 minutes
 function doPost(e) {
   var list;
   try { list = JSON.parse(e.postData.contents); } catch (err) { return json({ ok: false }); }
+  if (list && list.kind === 'message') return saveMessage(list);
   if (!Array.isArray(list)) list = [list];
 
   var now = new Date();
@@ -53,6 +59,35 @@ function doPost(e) {
   try {
     var sh = sheet();
     sh.getRange(sh.getLastRow() + 1, 1, rows.length, COLS.length).setValues(rows);
+  } finally {
+    lock.releaseLock();
+  }
+  return json({ ok: true });
+}
+
+// ---- The contact form sends one message here ----
+function saveMessage(m) {
+  if (m.website) return json({ ok: true }); // honeypot field: only bots fill it in
+  var name = String(m.name || '').trim();
+  var email = String(m.email || '').trim();
+  var message = String(m.message || '').trim();
+  if (!name || !message || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return json({ ok: false, error: 'Please fill in your name, a valid email and a message.' });
+  }
+
+  var cache = CacheService.getScriptCache();
+  var sent = Number(cache.get('msgs') || 0);
+  if (sent >= MAX_MSGS_PER_HOUR) return json({ ok: false, error: 'Too many messages right now. Please email me instead.' });
+
+  var fields = { name: name, email: email, message: message, page: m.page, lang: m.lang, tz: m.tz };
+  var row = MSG_COLS.map(function (c) { return c === 'created_at' ? new Date() : text(fields[c], MSG_LIMITS[c]); });
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var sh = sheet(MSG_SHEET, MSG_COLS);
+    sh.getRange(sh.getLastRow() + 1, 1, 1, MSG_COLS.length).setValues([row]);
+    cache.put('msgs', String(sent + 1), 3600);
   } finally {
     lock.releaseLock();
   }
@@ -92,12 +127,14 @@ function doGet(e) {
 }
 
 // ---- Helpers ----
-function sheet() {
+function sheet(name, cols) {
+  name = name || SHEET;
+  cols = cols || COLS;
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sh = ss.getSheetByName(SHEET);
+  var sh = ss.getSheetByName(name);
   if (!sh) {
-    sh = ss.insertSheet(SHEET);
-    sh.appendRow(COLS);
+    sh = ss.insertSheet(name);
+    sh.appendRow(cols);
     sh.setFrozenRows(1);
   }
   return sh;
@@ -109,8 +146,12 @@ function cell(col, v) {
     var n = Math.round(Number(v));
     return isFinite(n) ? Math.max(0, n) : '';
   }
-  var s = col === 'meta' ? JSON.stringify(v) : String(v);
-  s = s.slice(0, LIMITS[col] || 200);
+  return text(col === 'meta' ? JSON.stringify(v) : v, LIMITS[col] || 200);
+}
+
+function text(v, max) {
+  if (v === null || v === undefined) return '';
+  var s = String(v).slice(0, max);
   // Visitor text must never become a spreadsheet formula.
   return /^[=+\-@]/.test(s) ? "'" + s : s;
 }

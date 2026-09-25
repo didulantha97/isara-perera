@@ -116,7 +116,7 @@
       const sec = el.closest('main section[id]');
       if(sec) return sec.id;
       const areas = [['#cover', 'cover'], ['.rail', 'sidebar'], ['.topbar', 'topbar'], ['#fabWrap', 'quick-actions'],
-        ['.search-modal', 'search'], ['.skill-modal', 'skill-popup'], ['.lightbox', 'photo-zoom'], ['.blog-search-float', 'search']];
+        ['.search-modal', 'search'], ['.skill-modal', 'skill-popup'], ['.lightbox', 'photo-zoom'], ['.blog-search-float', 'search'], ['.msg-fab', 'message'], ['.msg-panel', 'message']];
       const hit = areas.find(([sel]) => el.closest(sel));
       return hit ? hit[1] : 'other';
     }
