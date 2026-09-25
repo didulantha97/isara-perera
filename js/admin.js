@@ -1,8 +1,10 @@
 /* ============================================================
-   ADMIN ANALYTICS DASHBOARD (admin.html)
-   Unlocks with your access code and reads events from the Google
-   Apps Script backend (analytics/apps-script.gs), which checks the
-   code server-side — the code and the data are never in this repo.
+   ADMIN DASHBOARD (admin.html)
+   Unlocks with your access code and reads events and contact-form
+   messages from the Google Apps Script backend
+   (analytics/apps-script.gs), which checks the code server-side —
+   the code and the data are never in this repo. Two tabs:
+   Analytics, and Messages (reply, mark replied, archive, delete).
    Shortcut: bookmark admin.html#code=YOUR-CODE to unlock directly.
    Event text comes from visitors, so everything rendered goes
    through esc().
@@ -25,6 +27,8 @@
   let days = 7;
   let sessionsShown = 25;
   let data = null;
+  let messages = null;   // null = the backend is an older version without messages
+  let msgFilter = 'new';
 
   // ---- Access code ----
   const CODE_KEY = 'cv-admin-code';
@@ -68,6 +72,22 @@
     load();
   });
   $('refreshBtn').addEventListener('click', load);
+
+  // ---- Tabs ----
+  const TAB_KEY = 'cv-admin-tab';
+  function showTab(name){
+    document.querySelectorAll('.tabs [role=tab]').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
+    $('overviewPanel').hidden = name !== 'overview';
+    $('messagesPanel').hidden = name !== 'messages';
+    $('rangeSeg').hidden = name !== 'overview';
+    $('dashNote').hidden = name !== 'overview';
+    store(TAB_KEY, name, sessionStorage);
+  }
+  $('dashView').querySelector('.tabs').addEventListener('click', e => {
+    const t = e.target.closest('[data-tab]');
+    if(t) showTab(t.dataset.tab);
+  });
+  showTab(store(TAB_KEY, undefined, sessionStorage) === 'messages' ? 'messages' : 'overview');
   $('moreSessions').addEventListener('click', () => { sessionsShown += 25; renderSessions(); });
 
   // ---- Load (returns true when the code was accepted) ----
@@ -94,7 +114,11 @@
       ? `${rows.length.toLocaleString()} events · updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · your own visits on this device are excluded`
       : 'No events in this range yet. Only visitors who click "Allow" on the privacy notice are counted.';
     data = shape(rows);
+    messages = Array.isArray(res.messages) ? res.messages : null;
+    $('sheetLink').hidden = !res.sheetUrl;
+    if(res.sheetUrl) $('sheetLink').href = res.sheetUrl;
     render();
+    renderMessages();
     return true;
   }
 
@@ -355,6 +379,161 @@
         </details>`;
     }).join('');
     $('moreSessions').hidden = list.length <= sessionsShown;
+  }
+
+  // ---- Messages ----
+  const STATUS_LABEL = { new: 'needs reply', replied: 'replied', archived: 'archived' };
+
+  $('msgFilter').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-filter]');
+    if(!btn) return;
+    msgFilter = btn.dataset.filter;
+    $('msgFilter').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+    renderMessages();
+  });
+  $('msgSearch').addEventListener('input', () => renderMessages());
+  $('attention').addEventListener('click', e => {
+    if(e.target.closest('[data-open-messages]')) showTab('messages');
+  });
+
+  function replyLinks(m){
+    const subject = 'Re: your message';
+    const quote = m.message.length > 1500 ? m.message.slice(0, 1500) + '…' : m.message;
+    const body = `Hi ${m.name.split(/\s+/)[0]},\n\n\n\n` +
+      `On ${fmtDateTime(m.created_at)}, ${m.name} wrote:\n` + quote.split('\n').map(l => '> ' + l).join('\n');
+    const q = new URLSearchParams({ view: 'cm', fs: '1', to: m.email, su: subject, body });
+    return {
+      mailto: `mailto:${encodeURIComponent(m.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+      gmail: 'https://mail.google.com/mail/?' + q.toString()
+    };
+  }
+
+  function renderAttention(){
+    const n = messages ? messages.filter(m => m.status === 'new').length : 0;
+    $('newCount').hidden = !n;
+    $('newCount').textContent = n;
+    document.title = (n ? `(${n}) ` : '') + 'Admin Dashboard';
+    const box = $('attention');
+    if(!messages){
+      box.hidden = false;
+      box.innerHTML = '<p><b>Messages need a backend update.</b> Paste the new <code>analytics/apps-script.gs</code> into Apps Script, then Deploy → Manage deployments → Edit → New version.</p>';
+      return;
+    }
+    box.hidden = !n;
+    if(!n) return;
+    const latest = messages.find(m => m.status === 'new');
+    box.innerHTML = `<p><b>${n} message${n === 1 ? '' : 's'} waiting for a reply.</b> Latest from ${esc(latest.name)}, ${esc(fmtDateTime(latest.created_at))}.</p>
+      <button type="button" class="btn solid" data-open-messages>Open messages</button>`;
+  }
+
+  function renderMessages(){
+    renderAttention();
+    const list = $('msgList');
+    if(!messages){
+      list.innerHTML = '<p class="empty">Update and redeploy the Apps Script backend to see messages here.</p>';
+      return;
+    }
+    const q = $('msgSearch').value.trim().toLowerCase();
+    const shown = messages.filter(m =>
+      (msgFilter === 'inbox' ? m.status !== 'archived' : m.status === msgFilter) &&
+      (!q || [m.name, m.email, m.message].some(v => v.toLowerCase().includes(q))));
+    if(!shown.length){
+      list.innerHTML = `<p class="empty">${q ? 'No messages match that search.'
+        : msgFilter === 'new' ? 'All caught up — nothing is waiting for a reply.' : 'No messages here.'}</p>`;
+      return;
+    }
+    list.innerHTML = shown.map(m => {
+      const r = replyLinks(m);
+      const meta = [m.page && 'sent from ' + (isHome(m.page) ? 'Home' : /blog\.html/.test(m.page) ? 'Blog' : m.page), m.tz && tzLabel(m.tz), m.lang].filter(Boolean).join(' · ');
+      return `
+        <article class="msg msg-${esc(m.status)}" data-id="${esc(m.id)}">
+          <header class="msg-top">
+            <div class="msg-who">
+              <b>${esc(m.name)}</b>
+              <a href="mailto:${esc(m.email)}">${esc(m.email)}</a>
+              <span class="badge${m.status === 'new' ? ' hot' : ''}">${esc(STATUS_LABEL[m.status])}</span>
+            </div>
+            <time class="muted" datetime="${esc(m.created_at)}">${esc(fmtDateTime(m.created_at))}</time>
+          </header>
+          <p class="msg-body">${esc(m.message)}</p>
+          ${meta ? `<p class="msg-meta">${esc(meta)}</p>` : ''}
+          <div class="msg-actions">
+            <a class="btn solid sm" href="${esc(r.mailto)}" data-act="reply">Reply</a>
+            <a class="btn ghost sm" href="${esc(r.gmail)}" target="_blank" rel="noopener" data-act="reply">Reply in Gmail</a>
+            <button type="button" class="btn ghost sm" data-act="copy">Copy email</button>
+            ${m.status === 'new'
+              ? '<button type="button" class="btn ghost sm" data-act="replied">Mark replied</button>'
+              : '<button type="button" class="btn ghost sm" data-act="new">Mark as needs reply</button>'}
+            ${m.status !== 'archived' ? '<button type="button" class="btn ghost sm" data-act="archived">Archive</button>' : ''}
+            <button type="button" class="btn ghost sm danger" data-act="delete">Delete</button>
+          </div>
+        </article>`;
+    }).join('');
+  }
+
+  // Send a change to the backend. Returns true when it was saved.
+  async function sendAction(action, ids, status){
+    try{
+      const r = await fetch(cfg.endpoint, {
+        method: 'POST',
+        // text/plain keeps this a "simple" request, since Apps Script can't answer CORS preflights.
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ kind: 'admin', code, action, ids, status })
+      });
+      const res = await r.json();
+      if(res.ok && typeof res.updated === 'number') return true;
+      if(/code/i.test(res.error || '')){ lock(res.error); return false; }
+      toast(res.error || 'That change wasn\'t saved. Redeploy the Apps Script backend and try again.');
+    }catch(err){
+      toast('Couldn\'t reach the backend. The change wasn\'t saved.');
+    }
+    return false;
+  }
+
+  // Change status right away, save in the background, and put it back if saving fails.
+  async function setStatus(m, status, note){
+    const before = m.status;
+    if(before === status) return;
+    m.status = status;
+    renderMessages();
+    toast(note || `Marked as ${STATUS_LABEL[status]}.`, () => setStatus(m, before, 'Undone.'));
+    if(!await sendAction('status', [m.id], status)){ m.status = before; renderMessages(); }
+  }
+
+  $('msgList').addEventListener('click', async e => {
+    const el = e.target.closest('[data-act]');
+    if(!el) return;
+    const m = messages.find(x => x.id === el.closest('.msg').dataset.id);
+    if(!m) return;
+    const act = el.dataset.act;
+    // Reply links open the mail app as usual; the message moves to "replied" with an undo.
+    // Wait a tick: re-rendering during the click would remove the link before it opens.
+    if(act === 'reply') setTimeout(() => setStatus(m, 'replied', 'Opened a reply — marked as replied.'));
+    else if(act === 'copy'){
+      try{ await navigator.clipboard.writeText(m.email); toast('Copied ' + m.email); }
+      catch(err){ toast('Couldn\'t copy. The address is ' + m.email); }
+    }
+    else if(act === 'delete'){
+      if(!confirm(`Delete the message from ${m.name}? This removes it from the sheet and can't be undone.`)) return;
+      el.disabled = true;
+      if(await sendAction('delete', [m.id])){
+        messages = messages.filter(x => x !== m);
+        renderMessages();
+        toast('Message deleted.');
+      } else el.disabled = false;
+    }
+    else setStatus(m, act);
+  });
+
+  // ---- Toast with an optional Undo ----
+  let toastTimer;
+  function toast(text, undo){
+    const t = $('toast');
+    t.innerHTML = `<span>${esc(text)}</span>` + (undo ? '<button type="button" class="toast-undo">Undo</button>' : '');
+    t.hidden = false;
+    if(undo) t.querySelector('button').onclick = () => { t.hidden = true; undo(); };
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, undo ? 6000 : 3500);
   }
 
   // ---- Tooltip for the day chart ----
