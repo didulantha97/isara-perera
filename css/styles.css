@@ -297,6 +297,9 @@
   .phone-menu .wa-opt svg{fill:#25d366}
   .phone-menu .li-opt svg{fill:#0a66c2}
   .foot-note{margin-top:34px;color:var(--muted);font-size:13px}
+  .foot-link{margin-top:10px}
+  .foot-link a{color:var(--accent);font-weight:600;text-decoration:none}
+  .foot-link a:hover{text-decoration:underline}
 
   /* ---------- FLOATING QUICK ACTIONS ---------- */
   .fab-wrap{position:fixed;right:20px;bottom:calc(20px + var(--pad-bottom));z-index:90;display:flex;flex-direction:column;align-items:flex-end}
