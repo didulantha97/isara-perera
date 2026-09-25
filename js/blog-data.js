@@ -16,6 +16,615 @@
    ============================================================ */
 window.BLOG_POSTS = [
   {
+    slug: 'proxy-servers-to-api-gateways-salesforce',
+    title: 'From Proxy Servers to API Gateways: Designing Secure Enterprise Integrations with Salesforce',
+    date: '2026-09-25',
+    tags: ['Salesforce', 'Integration', 'API Gateway', 'Apex', 'Architecture'],
+    summary: 'How proxy-server concepts evolve into API gateways and secure Salesforce integration architectures — Named Credentials, Apex callouts, Platform Events, authentication, rate limiting, logging, correlation IDs, retries and idempotency.',
+    body: `
+      <p class="blog-lead">Modern Salesforce implementations rarely operate in isolation. Salesforce frequently needs to communicate with ERP platforms, payment providers, internal systems, logistics applications, AI services and many other enterprise platforms.</p>
+      <div class="blog-equation">Client → Proxy → Internet &nbsp;⟶&nbsp; Salesforce → API Gateway → Enterprise Systems</div>
+
+      <nav class="blog-toc" aria-label="Contents">
+        <strong>Contents</strong>
+        <ol>
+          <li><a href="#introduction">Introduction</a></li>
+          <li><a href="#proxy">The proxy concept</a></li>
+          <li><a href="#salesforce">Salesforce architecture</a></li>
+          <li><a href="#business">Business scenario</a></li>
+          <li><a href="#named-credentials">Named Credentials</a></li>
+          <li><a href="#apex">Apex callout</a></li>
+          <li><a href="#gateway">What the gateway does</a></li>
+          <li><a href="#authentication">Authentication</a></li>
+          <li><a href="#rate-limit">Rate limiting</a></li>
+          <li><a href="#logging">Logging</a></li>
+          <li><a href="#correlation">Correlation IDs</a></li>
+          <li><a href="#errors">Error handling</a></li>
+          <li><a href="#async">Asynchronous integration</a></li>
+          <li><a href="#inbound">Inbound integration</a></li>
+          <li><a href="#webhooks">Webhooks</a></li>
+          <li><a href="#idempotency">Idempotency</a></li>
+          <li><a href="#security">Security architecture</a></li>
+          <li><a href="#comparison">Proxy vs API gateway</a></li>
+          <li><a href="#technologies">Technologies</a></li>
+          <li><a href="#production">Production scenario</a></li>
+          <li><a href="#problems">Problems solved</a></li>
+          <li><a href="#direct">When direct is fine</a></li>
+          <li><a href="#conclusion">Conclusion</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="introduction">Introduction</h2>
+      <p>The simplest integration architecture is straightforward:</p>
+      <pre><code>Salesforce  →  External API</code></pre>
+      <p>For a small implementation, this architecture may be completely acceptable. But imagine an enterprise Salesforce organization communicating with twenty, fifty or even hundreds of APIs.</p>
+      <p>Suddenly we need to think about authentication, authorization, API governance, logging, monitoring, rate limiting, routing, security, retry strategies, versioning and backend protection.</p>
+      <p>This is where an <strong>API gateway</strong> or <strong>enterprise integration layer</strong> becomes extremely valuable.</p>
+
+      <h2 id="proxy">1. Starting with the proxy server concept</h2>
+      <p>Before looking at Salesforce, it is useful to understand the traditional proxy-server architecture. In a conventional corporate network, a user may not communicate directly with the internet.</p>
+      <pre><code>Employee Computer
+       |
+       v
+  Proxy Server
+       |
+       v
+    Internet</code></pre>
+      <p>The proxy becomes an intermediary between the client and the destination. Depending on the implementation, it can provide access control, traffic filtering, logging, caching and centralized policy enforcement.</p>
+      <div class="blog-callout"><strong>Core architectural principle:</strong> place a controlled intermediary between a consumer and the resources that the consumer needs to access.</div>
+      <p>This same architectural principle appears in modern enterprise API architecture.</p>
+
+      <h2 id="salesforce">2. Translating the concept into Salesforce</h2>
+      <p>Consider a Salesforce organization that needs to communicate with several enterprise platforms.</p>
+      <pre><code>Salesforce
+   |
+   +------> ERP
+   |
+   +------> Payment Provider
+   |
+   +------> Shipping API
+   |
+   +------> Order Management
+   |
+   +------> AI Service</code></pre>
+      <p>Every direct integration may have different:</p>
+      <ul>
+        <li>authentication mechanisms</li>
+        <li>endpoint URLs</li>
+        <li>security policies</li>
+        <li>request formats</li>
+        <li>rate limits</li>
+        <li>error responses</li>
+        <li>logging requirements</li>
+        <li>API versions</li>
+      </ul>
+      <p>As the number of integrations increases, maintaining this architecture becomes increasingly difficult. An API management layer provides another option.</p>
+      <pre><code>                            +------> ERP
+                            |
+                            +------> Payment Provider
+                            |
+Salesforce ---> API Gateway +------> Shipping
+                            |
+                            +------> Internal APIs
+                            |
+                            +------> AI Services</code></pre>
+      <p>Salesforce now communicates through a governed integration layer rather than implementing every infrastructure concern independently.</p>
+
+      <h2 id="business">3. Example business scenario</h2>
+      <p>Imagine an insurance company using Salesforce for customer onboarding and policy management. A customer purchases an insurance policy through Experience Cloud.</p>
+      <pre><code>Customer
+   |
+   v
+Experience Cloud
+   |
+   v
+Salesforce
+   |
+   v
+API Gateway
+   |
+   +------> Payment Provider
+   |
+   +------> Policy Management System
+   |
+   +------> Document Service
+   |
+   +------> Notification Service</code></pre>
+      <p>Salesforce manages the CRM and business process, while the API layer controls communication with downstream systems.</p>
+      <div class="blog-cards">
+        <div><strong>Salesforce</strong>Customer, policy and business-process management.</div>
+        <div><strong>API Gateway</strong>Authentication, routing, governance, throttling and monitoring.</div>
+        <div><strong>Backend Systems</strong>Payments, policy processing, documents and notifications.</div>
+      </div>
+
+      <h2 id="named-credentials">4. Salesforce Named Credentials</h2>
+      <p>Authentication details and service endpoints should generally not be hard-coded inside Apex. A poor implementation could look like:</p>
+      <pre><code>HttpRequest request = new HttpRequest();
+
+request.setEndpoint(
+    'https://production-api.company.com/payments'
+);
+
+request.setHeader(
+    'Authorization',
+    'Bearer some-hard-coded-token'
+);</code></pre>
+      <p>This creates several maintainability and security problems. Salesforce provides <strong>Named Credentials</strong> and related authentication capabilities to separate endpoint and authentication configuration from Apex business logic. Apex can then reference a logical endpoint:</p>
+      <pre><code>request.setEndpoint(
+    'callout:Enterprise_API/payments'
+);</code></pre>
+      <p>This creates a cleaner separation between application logic and infrastructure configuration.</p>
+
+      <h2 id="apex">5. Creating the Apex integration layer</h2>
+      <p>Salesforce Apex can perform an HTTP callout to the gateway.</p>
+      <pre><code>public with sharing class PaymentService {
+
+    public static String createPayment(
+        Decimal amount,
+        String currencyCode
+    ) {
+
+        HttpRequest request = new HttpRequest();
+
+        request.setEndpoint(
+            'callout:Enterprise_API/payments'
+        );
+
+        request.setMethod('POST');
+
+        request.setHeader(
+            'Content-Type',
+            'application/json'
+        );
+
+        Map&lt;String, Object&gt; payload =
+            new Map&lt;String, Object&gt;{
+                'amount'   =&gt; amount,
+                'currency' =&gt; currencyCode
+            };
+
+        request.setBody(
+            JSON.serialize(payload)
+        );
+
+        Http http = new Http();
+
+        HttpResponse response =
+            http.send(request);
+
+        Integer statusCode =
+            response.getStatusCode();
+
+        if (
+            statusCode == 200 ||
+            statusCode == 201
+        ) {
+            return response.getBody();
+        }
+
+        throw new CalloutException(
+            'Payment API failed. Status: '
+            + statusCode
+        );
+    }
+}</code></pre>
+      <div class="blog-callout tip"><strong>Note:</strong> <code>currency</code> is a reserved keyword in Apex, so the parameter is named <code>currencyCode</code> while the JSON field stays <code>currency</code>.</div>
+      <p>Salesforce only needs to know the gateway contract. It does not necessarily need to know the complete infrastructure behind the gateway.</p>
+
+      <h2 id="gateway">6. What does the API gateway actually do?</h2>
+      <p>Salesforce might send:</p>
+      <pre><code>POST /payments</code></pre>
+      <p>Before forwarding that request, the gateway can apply several policies.</p>
+      <pre><code>Salesforce
+    |
+    v
+API Gateway
+    |
+    +--> Authenticate client
+    |
+    +--> Authorize request
+    |
+    +--> Validate payload
+    |
+    +--> Apply rate limits
+    |
+    +--> Add correlation ID
+    |
+    +--> Record telemetry
+    |
+    +--> Route request
+    |
+    v
+Backend Service</code></pre>
+      <p>This makes the gateway a centralized control point for enterprise API traffic.</p>
+
+      <h2 id="authentication">7. Authentication and security translation</h2>
+      <p>One significant advantage of an integration layer is that different systems can use different authentication mechanisms.</p>
+      <pre><code>Salesforce
+     |
+   OAuth
+     |
+     v
+API Gateway
+     |
+     +------ mTLS ------> ERP
+     |
+     +------ API Key ---> Payment Provider
+     |
+     +------ JWT -------> Internal Service</code></pre>
+      <p>Salesforce does not always need to understand every backend-specific authentication implementation. The gateway can translate enterprise security requirements while exposing a consistent API contract.</p>
+
+      <h2 id="rate-limit">8. Protecting systems with rate limiting</h2>
+      <p>Consider a Salesforce batch or automation error that unexpectedly generates thousands of requests.</p>
+      <pre><code>Salesforce
+     |
+     | 10,000 requests
+     v
+Backend API</code></pre>
+      <p>The backend application could become overloaded. A gateway can enforce policies such as:</p>
+      <pre><code>Maximum API Rate:
+100 requests / second</code></pre>
+      <pre><code>Salesforce
+     |
+     v
+API Gateway
+     |
+Rate Limit
+     |
+     v
+Backend Service</code></pre>
+      <p>This creates an additional layer of protection for downstream systems.</p>
+
+      <h2 id="logging">9. Centralized logging and observability</h2>
+      <p>Integration failures are difficult to troubleshoot when logs are distributed across several platforms. An API management layer can generate telemetry such as:</p>
+      <pre><code>Request ID: 8A91X
+Source: Salesforce
+Method: POST
+Endpoint: /payments
+Status: 201
+Duration: 230 ms
+Timestamp: 10:32:45</code></pre>
+      <p>Operations teams can then investigate API performance, failures and unusual patterns from a centralized location.</p>
+      <div class="blog-callout tip"><strong>Enterprise benefit:</strong> good integration architecture is not only about successfully sending data. It is also about being able to understand what happened when something fails.</div>
+
+      <h2 id="correlation">10. Correlation IDs for end-to-end tracing</h2>
+      <p>A correlation ID provides a common identifier across systems participating in the same transaction. Salesforce might generate:</p>
+      <pre><code>TXN-20260925-100293</code></pre>
+      <p>And send it as an HTTP header:</p>
+      <pre><code>X-Correlation-ID: TXN-20260925-100293</code></pre>
+      <p>The same identifier can travel through the entire architecture.</p>
+      <pre><code>Salesforce
+   |
+TXN-100293
+   |
+   v
+API Gateway
+   |
+TXN-100293
+   |
+   v
+Backend Service
+   |
+TXN-100293
+   |
+   v
+Database / External Platform</code></pre>
+      <p>If a production incident occurs, engineers can search for the same identifier across Salesforce, middleware and backend logs.</p>
+
+      <h2 id="errors">11. Designing proper error handling</h2>
+      <p>Production integrations should not treat every failure in the same way.</p>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>HTTP Status</th><th>Meaning</th><th>Typical Handling</th></tr></thead>
+          <tbody>
+            <tr><td>2xx</td><td>Successful request</td><td>Continue processing.</td></tr>
+            <tr><td>400</td><td>Invalid request</td><td>Fix the request rather than blindly retrying.</td></tr>
+            <tr><td>401 / 403</td><td>Authentication or authorization problem</td><td>Investigate credentials or permissions.</td></tr>
+            <tr><td>429</td><td>Rate limited</td><td>Retry later according to policy.</td></tr>
+            <tr><td>500 / 502 / 503</td><td>Server-side or temporary failure</td><td>Retry where appropriate using a controlled retry strategy.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="blog-callout warning"><strong>Important:</strong> retrying every failed request immediately can make outages worse. Retry logic should consider the type of failure and use controlled backoff policies.</div>
+
+      <h2 id="async">12. Asynchronous integration</h2>
+      <p>Not every integration needs to happen synchronously. A tightly coupled flow may look like:</p>
+      <pre><code>User
+ |
+ v
+Salesforce
+ |
+ | waits
+ v
+External API
+ |
+ v
+Response
+ |
+ v
+Salesforce
+ |
+ v
+User</code></pre>
+      <p>For some use cases, asynchronous architecture is more resilient.</p>
+      <pre><code>Salesforce
+     |
+     v
+Platform Event
+     |
+     v
+Integration Layer
+     |
+     v
+External System</code></pre>
+      <p>Salesforce can publish an event representing a business change, for example:</p>
+      <pre><code>Order_Created__e</code></pre>
+      <p>An integration platform can consume the event and synchronize the ERP independently.</p>
+
+      <h2 id="inbound">13. Inbound integration</h2>
+      <p>Integration is not only about Salesforce calling another system. External systems frequently need to communicate back to Salesforce.</p>
+      <pre><code>External System
+       |
+       v
+   API Gateway
+       |
+       +--> Authentication
+       |
+       +--> Validation
+       |
+       +--> Rate Limiting
+       |
+       +--> Logging
+       |
+       v
+Salesforce REST Endpoint</code></pre>
+      <p>Salesforce may expose APIs through standard Salesforce APIs or custom Apex REST services depending on the requirement.</p>
+
+      <h2 id="webhooks">14. Payment webhook example</h2>
+      <p>Consider a payment provider sending an asynchronous notification after processing a payment. The payload could look like:</p>
+      <pre><code>{
+    "transactionId": "TX12345",
+    "status": "SUCCESS",
+    "amount": 2500,
+    "currency": "SEK"
+}</code></pre>
+      <p>The architecture could be:</p>
+      <pre><code>Payment Provider
+        |
+      Webhook
+        |
+        v
+   API Gateway
+        |
+        v
+ Salesforce Apex REST
+        |
+        v
+   Payment__c</code></pre>
+      <p>Salesforce may expose an endpoint similar to:</p>
+      <pre><code>/services/apexrest/payment/webhook</code></pre>
+      <p>The webhook service locates the related transaction and updates Salesforce with the latest status.</p>
+
+      <h2 id="idempotency">15. Preventing duplicate processing with idempotency</h2>
+      <p>Webhooks and distributed integrations can deliver the same message more than once. Imagine this sequence:</p>
+      <pre><code>Webhook #1
+     |
+     v
+Create Payment Record
+
+Webhook #2
+     |
+     v
+Create Payment Record Again
+
+Result:
+Duplicate transaction</code></pre>
+      <p>A common solution is to store a unique external transaction identifier.</p>
+      <pre><code>External_Transaction_ID__c = "TX12345"</code></pre>
+      <p>Before processing the message:</p>
+      <pre><code>Does TX12345 already exist?
+          |
+     +----+----+
+     |         |
+    YES        NO
+     |         |
+  Ignore    Process
+ Duplicate  Transaction</code></pre>
+      <p>This makes the operation <strong>idempotent</strong>. Idempotency is particularly important for payments, order creation and other operations where duplicate processing can have serious business consequences.</p>
+
+      <h2 id="security">16. Building security in multiple layers</h2>
+      <p>Enterprise architecture should avoid depending on a single security mechanism. A Salesforce integration could apply multiple controls:</p>
+      <pre><code>Salesforce
+     |
+     v
+Named Credential
+     |
+     v
+OAuth / JWT
+     |
+     v
+API Gateway
+     |
+     +--> Authorization
+     +--> Validation
+     +--> Rate Limiting
+     +--> Monitoring
+     |
+     v
+Network Security
+     |
+     v
+Backend Service</code></pre>
+      <p>This approach is commonly described as <strong>defence in depth</strong>. If one layer fails or is misconfigured, additional controls still exist.</p>
+
+      <h2 id="comparison">17. Squid proxy vs modern API gateway</h2>
+      <p>A traditional proxy and an enterprise API gateway are not the same product, but some architectural ideas are closely related.</p>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Traditional Proxy</th><th>API Gateway</th></tr></thead>
+          <tbody>
+            <tr><td>Controls client web traffic</td><td>Controls application API traffic</td></tr>
+            <tr><td>Client → Proxy → Internet</td><td>Salesforce → Gateway → API</td></tr>
+            <tr><td>Website access control</td><td>API authorization</td></tr>
+            <tr><td>Access logging</td><td>API observability</td></tr>
+            <tr><td>Web-content caching</td><td>API-response caching where appropriate</td></tr>
+            <tr><td>Network policy enforcement</td><td>API governance and security policy</td></tr>
+            <tr><td>Primarily web/network traffic</td><td>Application-to-application communication</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <blockquote>The technology changes, but the architecture retains an important principle: place a controlled, observable and secure intermediary between systems.</blockquote>
+
+      <h2 id="technologies">Which technologies can implement this?</h2>
+      <p>The architecture itself is vendor-independent. Salesforce implementations may combine technologies such as:</p>
+      <div class="blog-cards">
+        <div><strong>Salesforce</strong>Apex, Flow, Platform Events, REST APIs and Named Credentials.</div>
+        <div><strong>MuleSoft</strong>API-led connectivity, integration orchestration and API management.</div>
+        <div><strong>Azure API Management</strong>API security, policies, transformations, monitoring and governance.</div>
+        <div><strong>AWS API Gateway</strong>Managed API exposure, authentication, throttling and routing.</div>
+        <div><strong>Google Apigee</strong>Enterprise API management and analytics.</div>
+        <div><strong>Kong / NGINX</strong>Gateway, proxy, routing and traffic-management capabilities.</div>
+      </div>
+
+      <h2 id="production">18. Complete Salesforce production scenario</h2>
+      <p>Consider a B2B organization using Salesforce Sales Cloud and an external ERP. When a sales representative closes an Opportunity, an order must be created in the ERP.</p>
+      <pre><code>Opportunity
+     |
+Closed Won
+     |
+     v
+Salesforce Flow
+     |
+     v
+Queueable Apex
+     |
+     v
+Named Credential
+     |
+     v
+API Gateway
+     |
+     v
+ERP
+     |
+Create Order
+     |
+     v
+ERP Order ID</code></pre>
+      <p>Assume the ERP creates:</p>
+      <pre><code>ERP Order Number:
+ERP-90821</code></pre>
+      <p>The ERP can return the order information through the integration layer.</p>
+      <pre><code>ERP
+ |
+ v
+API Gateway
+ |
+ v
+Salesforce API
+ |
+ v
+Opportunity / Order__c
+
+ERP Order ID:
+ERP-90821</code></pre>
+      <p>Salesforce now maintains a reference to the corresponding ERP transaction.</p>
+
+      <h3>Adding reliability</h3>
+      <p>A production implementation can improve the architecture further.</p>
+      <pre><code>Salesforce
+     |
+     v
+Queueable Apex
+     |
+     v
+Named Credential
+     |
+     v
+API Gateway
+     |
+     +--> Authentication
+     |
+     +--> Rate Limiting
+     |
+     +--> Schema Validation
+     |
+     +--> Correlation ID
+     |
+     +--> Logging
+     |
+     v
+ERP
+     |
+     v
+Response
+     |
+     v
+Salesforce
+
+Failure?
+   |
+   +--> Retry Policy
+   |
+   +--> Integration Log
+   |
+   +--> Support Alert</code></pre>
+      <p>This is much closer to the architecture expected for a robust enterprise integration than simply embedding an HTTP call inside business logic.</p>
+
+      <h2 id="problems">What problems does this architecture solve?</h2>
+      <div class="blog-cards">
+        <div><strong>Security</strong>Reduces unnecessary direct exposure of downstream services.</div>
+        <div><strong>Governance</strong>Centralizes policies for enterprise APIs.</div>
+        <div><strong>Observability</strong>Makes transactions easier to monitor and troubleshoot.</div>
+        <div><strong>Scalability</strong>Allows traffic-management and throttling policies to protect services.</div>
+        <div><strong>Maintainability</strong>Separates Salesforce business logic from infrastructure concerns.</div>
+        <div><strong>Reliability</strong>Supports controlled retries, asynchronous processing and failure management.</div>
+        <div><strong>Traceability</strong>Correlation IDs allow end-to-end transaction investigation.</div>
+        <div><strong>Standardization</strong>Creates reusable patterns across multiple Salesforce integrations.</div>
+      </div>
+
+      <h2 id="direct">Direct integration is not always wrong</h2>
+      <p>An API gateway should not be introduced simply because it is an enterprise technology. For a simple use case, this may be completely reasonable:</p>
+      <pre><code>Salesforce  →  External REST API</code></pre>
+      <p>Adding unnecessary middleware can introduce additional cost, latency, deployment dependencies and operational complexity.</p>
+      <p>An API-management layer becomes particularly valuable when an organization needs consistent security, governance, monitoring, traffic management or integration across many services.</p>
+      <div class="blog-callout"><strong>Architecture principle:</strong> do not add a gateway because the architecture looks more sophisticated. Add it when there is a real governance, security, integration or operational requirement.</div>
+
+      <h2 id="conclusion">Conclusion</h2>
+      <p>A traditional proxy server teaches an important architectural concept: communication between systems does not always need to happen directly.</p>
+      <p>In a networking environment:</p>
+      <pre><code>Client  →  Proxy  →  Internet</code></pre>
+      <p>In enterprise Salesforce architecture, the concept can evolve into:</p>
+      <pre><code>Salesforce  →  API Gateway  →  Enterprise Systems</code></pre>
+      <p>The gateway is not merely forwarding traffic. It can become an important part of the enterprise security and integration architecture. A mature Salesforce integration solution can combine:</p>
+      <pre><code>Named Credentials
+        +
+Apex / Flow
+        +
+Asynchronous Processing
+        +
+API Gateway
+        +
+Authentication
+        +
+Authorization
+        +
+Rate Limiting
+        +
+Logging
+        +
+Correlation IDs
+        +
+Retry Strategies
+        +
+Idempotency
+        +
+Monitoring</code></pre>
+      <p>Together, these capabilities help create Salesforce integrations that are more secure, maintainable, observable and resilient.</p>
+      <blockquote>Enterprise integration is not simply about connecting Salesforce to another API. It is about designing a reliable communication architecture that remains manageable as the organization grows.</blockquote>
+    `
+  },
+  {
     slug: 'apex-replay-debugger-vscode-guide',
     title: 'Run Apex Replay Debugger in VS Code: Complete Salesforce Guide',
     date: '2026-09-25',
