@@ -21,6 +21,10 @@
    Edit (pencil) → Version: New version → Deploy (the URL stays).
    ============================================================ */
 
+/** Only ask for access to this one spreadsheet, not all of your Drive.
+ * @OnlyCurrentDoc
+ */
+
 var SHEET = 'events';
 var COLS = ['created_at', 'visitor_id', 'session_id', 'type', 'path', 'page_title', 'section', 'label', 'target',
   'referrer', 'device', 'browser', 'os', 'lang', 'tz', 'duration_ms', 'scroll_pct', 'meta'];

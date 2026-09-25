@@ -7,5 +7,5 @@
    Leave the placeholder in place to switch tracking off.
    ============================================================ */
 window.ANALYTICS_CONFIG = {
-  endpoint: 'PASTE-YOUR-APPS-SCRIPT-WEB-APP-URL-HERE'
+  endpoint: 'https://script.google.com/macros/s/AKfycbxcZGZue2QLk8_5tXVki3jty18Qfc9BnErk3czW3YufdJsx8gD29TlTz_zJnTqtdFjngA/exec'
 };
