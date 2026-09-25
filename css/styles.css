@@ -480,3 +480,25 @@
   .skill-modal{padding:14px}
   .skill-modal-panel{padding:26px 20px 24px;border-radius:16px}
 }
+
+/* ---- Privacy notice (injected by js/tracker.js) ---- */
+.privacy-notice{
+  position:fixed;left:20px;bottom:calc(20px + var(--pad-bottom));z-index:220;
+  max-width:360px;background:var(--surface);border:1px solid var(--line-strong);border-radius:14px;
+  padding:14px 16px;box-shadow:0 12px 28px rgba(0,0,0,.38);color:var(--text);font-size:13px;line-height:1.5;
+  animation:privacyIn .3s ease both;
+}
+.privacy-notice p{margin:0 0 10px;color:var(--muted)}
+.privacy-actions{display:flex;justify-content:flex-end;gap:8px}
+.privacy-btn{
+  font:inherit;font-weight:600;font-size:13px;padding:6px 14px;border-radius:9px;cursor:pointer;
+  background:transparent;color:var(--text);border:1px solid var(--line-strong);
+}
+.privacy-btn:hover{border-color:var(--accent)}
+.privacy-btn.solid{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.privacy-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@keyframes privacyIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.privacy-notice{animation:none}}
+@media (max-width:640px){
+  .privacy-notice{left:14px;right:78px;bottom:calc(14px + var(--pad-bottom));max-width:none}
+}
