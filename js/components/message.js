@@ -105,6 +105,11 @@
       if(res.ok){
         form.reset();
         say('Thanks! Your message was sent.', 'ok');
+        // Let the thank-you show briefly, then close and clear it for next time.
+        setTimeout(() => {
+          if(!panel.hidden) setOpen(false);
+          say('');
+        }, 2200);
       }else{
         say(res.error || FAILED, 'err');
       }
