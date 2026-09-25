@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Blog — Isara Perera</title>
+<title>Blogs — Isara Perera</title>
 <meta name="description" content="Articles and notes by Isara Perera on enterprise software, Salesforce, integrations, cloud and AI.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,11 +18,19 @@
   <script src="js/components/sidebar.js"></script>
 
   <main>
+    <!-- FLOATING SEARCH (opens js/components/search.js) -->
+    <div class="blog-search-float">
+      <button class="blog-search-btn" type="button" data-search-open aria-label="Search blogs">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <span>Search blogs…</span><kbd>⌘K</kbd>
+      </button>
+    </div>
+
     <section id="blog" class="blog-page">
 
       <!-- LIST VIEW -->
       <div id="blogList">
-        <p class="eyebrow">Blog</p>
+        <p class="eyebrow">Blogs</p>
         <h1 class="title">Notes &amp; articles</h1>
         <p class="lead">Writing on enterprise software, integrations, cloud and AI — lessons from real projects.</p>
         <div class="blog-filters" id="blogFilters" role="group" aria-label="Filter posts by topic"></div>
@@ -47,6 +55,7 @@
 
 <script src="js/blog-data.js"></script>
 <script src="js/blog.js"></script>
+<script src="js/components/search.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

@@ -107,6 +107,17 @@
   nav.railnav a.active{background:var(--bg);color:var(--accent)}
   nav.railnav a.active .dot{background:var(--accent);opacity:1;transform:scale(1.4)}
 
+  .rail-link{
+    display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin:14px 0 0 12px;
+    font-weight:600;font-size:14.5px;color:var(--rail-ink);
+    text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:4px;
+    text-decoration-color:var(--rail-ink-soft);transition:text-decoration-color .15s,opacity .15s;
+  }
+  .rail-link svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s}
+  .rail-link:hover{text-decoration-color:currentColor}
+  .rail-link:hover svg{transform:translate(2px,-2px)}
+  .rail-link.current{text-decoration-color:currentColor}
+
   .rail .foot{margin-top:auto;padding-top:20px}
   .rail .socials{display:flex;gap:9px;margin-bottom:16px}
   .rail .socials a{

@@ -19,8 +19,7 @@
     { label: 'Expertise',      href: sectionHref('expertise') },
     { label: 'Experience',     href: sectionHref('experience') },
     { label: 'Certifications', href: sectionHref('certifications') },
-    { label: 'Contact',        href: sectionHref('contact') },
-    { label: 'Blog',           href: 'blog.html',                   key: 'blog' }
+    { label: 'Contact',        href: sectionHref('contact') }
   ];
 
   const navLinks = NAV.map(item => {
@@ -29,6 +28,10 @@
     const current = active && !onHome ? ' aria-current="page"' : '';
     return `<a href="${item.href}"${active ? ' class="active"' : ''}${current}><span class="dot"></span><span class="nav-text">${item.label}</span></a>`;
   }).join('\n      ');
+
+  // Blogs is a separate page, so it sits outside the section nav as a plain text link.
+  const onBlog = page === 'blog';
+  const blogLink = `<a href="blog.html" class="rail-link${onBlog ? ' current' : ''}"${onBlog ? ' aria-current="page"' : ''}>Blogs<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>`;
 
   mount.outerHTML = `
   <header class="topbar">
@@ -48,6 +51,7 @@
     <nav class="railnav" id="railnav">
       ${navLinks}
     </nav>
+    ${blogLink}
     <div class="foot">
       <div class="socials">
         <a href="https://www.linkedin.com/in/isara-perera-a43a0313a" target="_blank" rel="noopener" aria-label="LinkedIn">
