@@ -16,6 +16,342 @@
    ============================================================ */
 window.BLOG_POSTS = [
   {
+    slug: 'agentforce-vibes-mobile-mcp-tools-lwc',
+    title: 'Native Device Features in LWC with Agentforce Vibes and the Salesforce DX MCP Mobile Tools',
+    date: '2026-09-27',
+    tags: ['Salesforce', 'Agentforce', 'LWC', 'Mobile', 'MCP'],
+    summary: 'Six Lightning Web Components (barcode scanner, location, biometrics, calendar, contacts and NFC) built with Agentforce Vibes and grounded by the Salesforce DX MCP Server mobile tools, then tested in the Salesforce mobile app on an iPhone.',
+    body: `
+      <p class="blog-lead">A Lightning Web Component can scan a barcode, read GPS, check Face ID, write an NFC tag or save a contact on the phone, all through one JavaScript module: <code>lightning/mobileCapabilities</code>. The hard part is getting every option, permission prompt and error code right. That is what the mobile tools in the Salesforce DX MCP Server help with.</p>
+      <div class="blog-equation">Prompt → Agentforce Vibes → DX MCP mobile tools → LWC → Native device</div>
+
+      <nav class="blog-toc" aria-label="Contents">
+        <strong>Contents</strong>
+        <ol>
+          <li><a href="#why">Why grounding matters for mobile LWC</a></li>
+          <li><a href="#tools">The six mobile MCP tools</a></li>
+          <li><a href="#flow">How the pieces fit</a></li>
+          <li><a href="#setup">Enabling the mobile toolset</a></li>
+          <li><a href="#pattern">The pattern every component shares</a></li>
+          <li><a href="#barcode">Barcode Scanner</a></li>
+          <li><a href="#location">Device Location</a></li>
+          <li><a href="#biometrics">Biometric Verification</a></li>
+          <li><a href="#calendar">Device Calendar</a></li>
+          <li><a href="#contacts">Device Contacts</a></li>
+          <li><a href="#nfc">NFC Tags</a></li>
+          <li><a href="#device">Running it on a real device</a></li>
+          <li><a href="#errors">Error codes to handle</a></li>
+          <li><a href="#practices">Best practices</a></li>
+          <li><a href="#conclusion">Conclusion</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="why">Why grounding matters for mobile LWC</h2>
+      <p>Native device APIs are an easy place for an AI assistant to go wrong. There are no compile-time types, and the code usually can't be tested in the desktop browser because the services report themselves as unavailable there. A hallucinated option name or a missing permission rationale only shows up when someone runs the code on a phone.</p>
+      <p><strong>Agentforce Vibes</strong> avoids this by using the <strong>Salesforce DX MCP Server</strong> for grounding. Before it writes the component, the agent calls a dedicated tool that returns expert guidance, API documentation and implementation rules for that one capability. The generated code then follows the real API instead of a guess.</p>
+      <div class="blog-callout"><strong>Source code:</strong> every component in this article is in the <a href="https://github.com/didulantha97/AgentForceXL/tree/main/packages/mcp/main/default/lwc" target="_blank" rel="noopener">AgentForceXL repository</a> under <code>packages/mcp/main/default/lwc</code>.</div>
+
+      <h2 id="tools">The six mobile MCP tools</h2>
+      <p>These tools belong to the <code>mobile</code> and <code>mobile-core</code> toolsets of the DX MCP Server. Each one covers one native capability, and each maps to one component in the repository.</p>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>MCP tool</th><th>Guidance for</th><th>Service factory</th><th>Component</th></tr></thead>
+          <tbody>
+            <tr><td><code>create_mobile_lwc_barcode_scanner</code></td><td>Barcode and QR scanning</td><td><code>getBarcodeScanner()</code></td><td><code>barcodeScannerComponent</code></td></tr>
+            <tr><td><code>create_mobile_lwc_location</code></td><td>GPS position and tracking location changes</td><td><code>getLocationService()</code></td><td><code>locationComponent</code></td></tr>
+            <tr><td><code>create_mobile_lwc_biometrics</code></td><td>Face ID / fingerprint authentication</td><td><code>getBiometricsService()</code></td><td><code>biometricsComponent</code></td></tr>
+            <tr><td><code>create_mobile_lwc_calendar</code></td><td>Reading and adding native calendar events</td><td><code>getCalendarService()</code></td><td><code>calendarComponent</code></td></tr>
+            <tr><td><code>create_mobile_lwc_contacts</code></td><td>Picking and saving native device contacts</td><td><code>getContactsService()</code></td><td><code>contactsComponent</code></td></tr>
+            <tr><td><code>create_mobile_lwc_nfc</code></td><td>Reading, writing and erasing NFC tags</td><td><code>getNfcService()</code></td><td><code>nfcComponent</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="flow">How the pieces fit</h2>
+      <div class="blog-diagram">
+        <svg viewBox="20 40 1020 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow: a developer prompt goes to Agentforce Vibes, which calls the DX MCP Server mobile tools for grounding and generates a Lightning Web Component; the component imports lightning/mobileCapabilities, which talks to native device hardware inside the Salesforce mobile app">
+          <defs><marker id="mob-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" class="head"/></marker></defs>
+          <rect x="35" y="60" rx="14" width="200" height="120" class="box"/>
+          <text x="135" y="95" text-anchor="middle" class="t">Developer</text>
+          <text x="135" y="127" text-anchor="middle" class="s">"Add a barcode</text><text x="135" y="150" text-anchor="middle" class="s">scanner to this page"</text>
+
+          <rect x="295" y="60" rx="14" width="200" height="120" class="box hl"/>
+          <text x="395" y="95" text-anchor="middle" class="t">Agentforce Vibes</text>
+          <text x="395" y="127" text-anchor="middle" class="s">Plans and writes</text><text x="395" y="150" text-anchor="middle" class="s">the component</text>
+
+          <rect x="555" y="60" rx="14" width="220" height="120" class="box"/>
+          <text x="665" y="95" text-anchor="middle" class="t">DX MCP Server</text>
+          <text x="665" y="127" text-anchor="middle" class="s">create_mobile_lwc_*</text><text x="665" y="150" text-anchor="middle" class="s">API docs + rules</text>
+
+          <line x1="235" y1="120" x2="293" y2="120" class="ln" marker-end="url(#mob-arrow)"/>
+          <line x1="495" y1="110" x2="553" y2="110" class="ln" marker-end="url(#mob-arrow)"/>
+          <line x1="555" y1="140" x2="497" y2="140" class="ln" marker-end="url(#mob-arrow)"/>
+
+          <rect x="295" y="240" rx="14" width="200" height="110" class="box"/>
+          <text x="395" y="275" text-anchor="middle" class="t">LWC</text>
+          <text x="395" y="307" text-anchor="middle" class="s">lightning/</text><text x="395" y="328" text-anchor="middle" class="s">mobileCapabilities</text>
+
+          <rect x="555" y="240" rx="14" width="220" height="110" class="box"/>
+          <text x="665" y="275" text-anchor="middle" class="t">Salesforce App</text>
+          <text x="665" y="307" text-anchor="middle" class="s">iOS / Android</text><text x="665" y="328" text-anchor="middle" class="s">native bridge</text>
+
+          <rect x="835" y="240" rx="14" width="190" height="110" class="box hl"/>
+          <text x="930" y="275" text-anchor="middle" class="t">Device</text>
+          <text x="930" y="307" text-anchor="middle" class="s">Camera, GPS, NFC</text><text x="930" y="328" text-anchor="middle" class="s">Face ID, Contacts</text>
+
+          <line x1="395" y1="180" x2="395" y2="238" class="ln" marker-end="url(#mob-arrow)"/>
+          <line x1="495" y1="295" x2="553" y2="295" class="ln" marker-end="url(#mob-arrow)"/>
+          <line x1="775" y1="295" x2="833" y2="295" class="ln" marker-end="url(#mob-arrow)"/>
+        </svg>
+      </div>
+      <p>The MCP tools don't generate code themselves. They return grounding, meaning the correct API surface, options and constraints for one capability. Agentforce Vibes combines that with your project context and writes the component. At runtime, the component only needs <code>lightning/mobileCapabilities</code>.</p>
+
+      <h2 id="setup">Enabling the mobile toolset</h2>
+      <p>Register the DX MCP Server in your IDE's MCP configuration and include the mobile toolset. A typical entry looks like this:</p>
+      <pre><code>{
+  "mcpServers": {
+    "salesforce": {
+      "command": "npx",
+      "args": [
+        "-y", "@salesforce/mcp",
+        "--orgs", "DEFAULT_TARGET_ORG",
+        "--toolsets", "orgs,metadata,mobile"
+      ]
+    }
+  }
+}</code></pre>
+      <p>Use <code>mobile-core</code> if you want a smaller set. Once the server is connected, a prompt such as <em>"Create an LWC that scans barcodes and lists the results"</em> is enough for Agentforce Vibes to pick <code>create_mobile_lwc_barcode_scanner</code> on its own.</p>
+
+      <h2 id="pattern">The pattern every component shares</h2>
+      <p>All six components follow the same structure, so once you understand one of them you can read the others quickly:</p>
+      <ol>
+        <li><strong>Get the service</strong> in <code>connectedCallback()</code> from its factory function.</li>
+        <li><strong>Guard with <code>isAvailable()</code></strong> and render a friendly message when the capability is missing.</li>
+        <li><strong>Call the async API</strong> inside <code>try / catch / finally</code>, with a busy flag that disables buttons and shows a spinner.</li>
+        <li><strong>Map error codes</strong> to messages a person can act on. Treat <code>USER_DISMISSED</code> as a normal user choice, not an error.</li>
+        <li><strong>Clean up</strong>: dismiss scanners and stop location watchers when the component is removed.</li>
+      </ol>
+      <pre><code>import { LightningElement, track } from "lwc";
+import { getLocationService } from "lightning/mobileCapabilities";
+
+export default class LocationComponent extends LightningElement {
+  _location = null;
+
+  connectedCallback() {
+    this._location = getLocationService();
+  }
+
+  get isAvailable() {
+    return this._location != null &amp;&amp; this._location.isAvailable();
+  }
+}</code></pre>
+      <p>The template then branches on that getter:</p>
+      <pre><code>&lt;template lwc:if={isAvailable}&gt;
+  &lt;!-- buttons and results --&gt;
+&lt;/template&gt;
+&lt;template lwc:else&gt;
+  &lt;div class="slds-notify slds-notify_alert slds-theme_info" role="status"&gt;
+    Location services are not available on this device or surface.
+  &lt;/div&gt;
+&lt;/template&gt;</code></pre>
+      <p>This guard lets the same component go on a desktop Lightning page and in the mobile app without breaking either one. Every bundle targets <code>lightning__AppPage</code>, <code>lightning__RecordPage</code> and <code>lightning__HomePage</code>.</p>
+
+      <h2 id="barcode">1. Barcode Scanner</h2>
+      <p><strong>Tool:</strong> <code>create_mobile_lwc_barcode_scanner</code></p>
+      <p>The scanner opens the native camera and returns an array of results, and each result has a <code>type</code> and a <code>value</code>. The component asks for the common 1D and 2D formats and configures the scanning UI itself:</p>
+      <pre><code>const options = {
+  barcodeTypes: ["qr", "ean13", "ean8", "upca", "upce",
+                 "code128", "code39", "code93",
+                 "datamatrix", "pdf417", "itf"],
+  instructionText: "Point the camera at a barcode",
+  successText: "Barcode captured!",
+  showSuccessCheckMark: true,
+  vibrateOnSuccess: true,
+  scannerSize: "LARGE",
+  cameraFacing: "BACK",
+  enableFlashlight: true,
+  previewBarcodeData: true
+};
+
+try {
+  const results = await this._scanner.scan(options);
+  // append each { type, value } to scannedBarcodes
+} catch (error) {
+  this.errorMessage = this._resolveErrorMessage(error.code);
+} finally {
+  this.isScanning = false;
+  this._scanner.dismiss();
+}</code></pre>
+      <p>The <code>dismiss()</code> call in <code>finally</code> is important. Without it the native scanner UI can stay open after an error. Each result can be copied to the clipboard, which helps when you are checking inventory codes in the field.</p>
+      <p><strong>Use cases:</strong> asset check-in, inventory counts, parts lookup and warehouse receiving.</p>
+
+      <h2 id="location">2. Device Location</h2>
+      <p><strong>Tool:</strong> <code>create_mobile_lwc_location</code></p>
+      <p>The location component supports both modes the service offers: a one-off <strong>Get Location</strong> and continuous <strong>Start / Stop Tracking</strong>.</p>
+      <pre><code>const LOCATION_OPTIONS = {
+  enableHighAccuracy: true,
+  permissionRationaleText:
+    "Allow location access to show your current position."
+};
+
+// One-off reading
+const result = await this._location.getCurrentPosition(LOCATION_OPTIONS);
+
+// Continuous tracking
+this._watchId = this._location.startWatchingPosition(
+  LOCATION_OPTIONS,
+  (result, failure) =&gt; {
+    if (failure) { /* show error, stop watching */ }
+    else if (result) { this._setPosition(result); }
+  }
+);</code></pre>
+      <p>The result is shown on a <code>lightning-map</code>, with latitude, longitude, accuracy, altitude, speed and heading below it. Some of these values can be <code>null</code> depending on the device, so the component shows "—" instead of "NaN".</p>
+      <div class="blog-callout"><strong>Don't leak watchers:</strong> the component calls <code>stopWatchingPosition(watchId)</code> in <code>disconnectedCallback()</code>. If you forget this, GPS keeps running and draining the battery after the user has left the page.</div>
+      <p><strong>Use cases:</strong> field-service check-in, geotagged inspections, proof of visit and route tracking.</p>
+
+      <h2 id="biometrics">3. Biometric Verification</h2>
+      <p><strong>Tool:</strong> <code>create_mobile_lwc_biometrics</code></p>
+      <p>This service does not return a biometric identity. It answers one question: <em>is the person holding this phone the device owner?</em> The component checks readiness first, then verifies:</p>
+      <pre><code>const BIOMETRICS_OPTIONS = {
+  permissionRequestTitle: "Verify Your Identity",
+  permissionRequestBody:
+    "Use biometrics to confirm you are the owner of this device.",
+  additionalSupportedPolicies: ["PIN_CODE"]
+};
+
+// On load: is Face ID / fingerprint / PIN set up?
+this.isReady = await this._biometrics.isBiometricsReady(BIOMETRICS_OPTIONS);
+
+// On click
+this.verificationResult =
+  await this._biometrics.checkUserIsDeviceOwner(BIOMETRICS_OPTIONS);
+this.dispatchEvent(new CustomEvent("verified", {
+  detail: { isDeviceOwner: this.verificationResult }
+}));</code></pre>
+      <p>Adding <code>PIN_CODE</code> as a fallback means users without enrolled biometrics can still verify. The <code>verified</code> event lets a parent component protect a sensitive action, such as approving a quote or showing restricted data, without knowing anything about biometrics.</p>
+      <div class="blog-callout"><strong>Security note:</strong> treat this as a local presence check that improves UX, not as server-side authentication. Salesforce still enforces sharing, permissions and session security on the server.</div>
+
+      <h2 id="calendar">4. Device Calendar</h2>
+      <p><strong>Tool:</strong> <code>create_mobile_lwc_calendar</code></p>
+      <p>The calendar component is the most complete of the six. It loads the device's calendars, lists events for the next seven days, can filter by calendar, adds events with an optional reminder, and removes events from writable calendars.</p>
+      <pre><code>// Calendars and the primary writable one
+this.calendars = await this._calendar.getCalendars(CALENDAR_OPTIONS);
+
+// Events are queried in UTC seconds
+const events = await this._calendar.getEvents(
+  startSeconds, endSeconds,
+  selected ? [selected.title] : null,
+  CALENDAR_OPTIONS
+);
+
+// Add an event with a 15-minute reminder
+await this._calendar.addEvent({
+  id: "",
+  title, isAllDay, calendarId, location,
+  startDateSecondsUTC: startSeconds,
+  endDateSecondsUTC: endSeconds,
+  availability: "Busy",
+  status: "Confirmed",
+  alarms: [{ relativeOffsetSeconds: -15 * 60 }]
+}, CALENDAR_OPTIONS);</code></pre>
+      <p>Some details worth copying:</p>
+      <ul>
+        <li>Times are <strong>seconds</strong> since the epoch, not milliseconds. Converting <code>Date.parse()</code> wrongly is a very common bug.</li>
+        <li>Only calendars with <code>allowsContentModifications</code> are offered for new events, and the delete button only appears for events on those calendars.</li>
+        <li>The end time is validated against the start time before the native API is called.</li>
+        <li>Removing an event passes <code>span: "ThisEvent"</code>, so deleting one occurrence doesn't delete a whole recurring series.</li>
+      </ul>
+
+      <h2 id="contacts">5. Device Contacts</h2>
+      <p><strong>Tool:</strong> <code>create_mobile_lwc_contacts</code></p>
+      <p>This component works in both directions. <strong>Pick Contacts</strong> opens the native picker and reads the selected contacts into Salesforce, and <strong>Save to Contacts</strong> writes a new contact into the phone's address book.</p>
+      <pre><code>// Read: native picker
+const contacts = await this._contacts.getContacts(CONTACTS_OPTIONS);
+
+// Write: the full contact shape is expected
+await this._contacts.putContact({
+  id: "",
+  name: { givenName, familyName, middleName: "", namePrefix: "", nameSuffix: "" },
+  phoneNumbers: [{ label: "mobile", value: phone }],
+  emails: [{ label: "work", value: email }],
+  organizations: [{ name: company, department: "", title: "" }],
+  addresses: [], ims: [], note: "", urls: []
+}, CONTACTS_OPTIONS);</code></pre>
+      <p>The service expects the full contact shape, including empty arrays. Leaving out a field is a typical case where grounding saves you from a failed save on the device. The component also fires a <code>contactspicked</code> event, so a parent could create Salesforce Contact or Lead records from the selected entries.</p>
+
+      <h2 id="nfc">6. NFC Tags</h2>
+      <p><strong>Tool:</strong> <code>create_mobile_lwc_nfc</code></p>
+      <p>The NFC component reads, writes and erases tags. When writing, you can choose a plain-text record or a URL record:</p>
+      <pre><code>// Read: returns NDEF messages, each with records
+const messages = await this._nfc.read({
+  instructionText: "Hold your device near an NFC tag to read it.",
+  successText: "Tag read successfully."
+});
+
+// Write
+const record = writeType === "uri"
+  ? await this._nfc.createUriRecord(value)
+  : await this._nfc.createTextRecord({ text: value, langId: "en" });
+await this._nfc.write([record], { instructionText, successText });
+
+// Erase
+await this._nfc.erase({ instructionText, successText });</code></pre>
+      <p>When reading, each record may include a <code>parsed</code> version. If it doesn't, the component falls back to the <code>raw</code> payload and base64-decodes it. That way unknown tag formats still display something readable.</p>
+      <p><strong>Use cases:</strong> equipment tagging, site check-in points, asset handover and linking a physical item to a Salesforce record URL.</p>
+
+      <h2 id="device">Running it on a real device</h2>
+      <p>I put all six components on a Lightning App Page called <strong>MCP Home</strong> and opened it in the Salesforce mobile app on an iPhone:</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 24px">
+        <img src="assets/img/mcp-mobile-app-top.png" alt="Salesforce mobile app showing Barcode Scanner with a Scan Barcode button, Device Calendar showing it is not available on this device, and Device Location with Get Location and Start Tracking buttons" loading="lazy">
+        <img src="assets/img/mcp-mobile-app-bottom.png" alt="Salesforce mobile app showing Device Location buttons, Device Contacts showing it is not available on this device, and Biometric Verification with a Verify Identity button" loading="lazy">
+      </div>
+      <p>Barcode Scanner, Device Location and Biometric Verification were active. Device Calendar and Device Contacts showed their <em>"not available on this device or surface"</em> message.</p>
+      <p>That is the <code>isAvailable()</code> guard doing its job. Not every capability is supported in every app, app version and platform, and the page still rendered cleanly without errors. Before you build a feature around a capability, check the Mobile Capabilities availability matrix for your target app: the Salesforce mobile app, Field Service mobile or a Mobile Publisher app.</p>
+
+      <h2 id="errors">Error codes to handle</h2>
+      <p>Each component maps the service's error codes to messages the user can act on. These are the ones that come up most:</p>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Code</th><th>Meaning</th><th>What the user sees</th></tr></thead>
+          <tbody>
+            <tr><td><code>USER_DISMISSED</code></td><td>User closed the native UI</td><td>Nothing. It was their choice.</td></tr>
+            <tr><td><code>USER_DENIED_PERMISSION</code></td><td>Permission prompt declined</td><td>Try again and allow access.</td></tr>
+            <tr><td><code>USER_DISABLED_PERMISSION</code></td><td>Permission switched off in OS settings</td><td>Instructions to enable it in Settings.</td></tr>
+            <tr><td><code>SERVICE_NOT_ENABLED</code></td><td>Capability not enabled for the app/org</td><td>Contact your administrator.</td></tr>
+            <tr><td><code>LOCATION_SERVICE_DISABLED</code></td><td>Device location is off</td><td>Turn on location services.</td></tr>
+            <tr><td><code>NOT_CONFIGURED</code></td><td>Biometric hardware not enrolled</td><td>Set up Face ID / fingerprint.</td></tr>
+            <tr><td><code>NFC_NOT_ENABLED</code></td><td>NFC switched off</td><td>Enable NFC and retry.</td></tr>
+            <tr><td><code>TAG_EMPTY</code></td><td>Tag has no data</td><td>The NFC tag contains no data.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="practices">Best practices</h2>
+      <ul class="blog-checklist">
+        <li>Always check <code>isAvailable()</code> before rendering device controls.</li>
+        <li>Provide a clear <code>permissionRationaleText</code>, because users grant access more often when they understand why it is needed.</li>
+        <li>Disable buttons while a native call is in progress to prevent double invocations.</li>
+        <li>Do not show <code>USER_DISMISSED</code> as an error.</li>
+        <li>Clean up in <code>finally</code> and <code>disconnectedCallback()</code>: dismiss scanners and stop location watchers.</li>
+        <li>Use seconds (not milliseconds) for calendar timestamps.</li>
+        <li>Expose results via custom events (<code>verified</code>, <code>contactspicked</code>) so components stay reusable.</li>
+        <li>Test on a physical device. The desktop browser will always report the services as unavailable.</li>
+        <li>Review AI-generated code the same way you review any pull request. Grounding improves correctness, but it doesn't replace review.</li>
+      </ul>
+
+      <h2 id="conclusion">Conclusion</h2>
+      <p>The mobile tools in the Salesforce DX MCP Server give Agentforce Vibes the specialised knowledge that native device integration needs. They cover the options, permission flows and error codes that are easy to get wrong from memory. The result is six production-style components that share one clean pattern and degrade gracefully when a capability isn't available.</p>
+      <blockquote>Grounding turns "the AI wrote something that looks right" into "the AI wrote something that follows the platform's real API". For native device features, that difference decides whether the feature works in the field.</blockquote>
+
+      <p class="blog-note-small">Reviewed September 2026. Capability availability varies by app (Salesforce mobile app, Field Service, Mobile Publisher), app version and OS. MCP toolset names and tool lists can change as the DX MCP Server evolves, so check the current documentation before production use.</p>
+      <ul class="blog-sources">
+        <li><a href="https://github.com/didulantha97/AgentForceXL/tree/main/packages/mcp/main/default/lwc" target="_blank" rel="noopener">AgentForceXL — mobile capability LWC source</a></li>
+        <li><a href="https://github.com/salesforcecli/mcp" target="_blank" rel="noopener">Salesforce DX MCP Server (salesforcecli/mcp)</a></li>
+        <li><a href="https://developer.salesforce.com/docs/platform/lwc/guide" target="_blank" rel="noopener">Lightning Web Components Developer Guide</a></li>
+      </ul>
+    `
+  },
+  {
     slug: 'proxy-servers-to-api-gateways-salesforce',
     title: 'From Proxy Servers to API Gateways: Designing Secure Enterprise Integrations with Salesforce',
     date: '2026-09-25',
