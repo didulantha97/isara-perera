@@ -154,3 +154,6 @@
   .search-panel{max-height:calc(100dvh - var(--pad-top) - 24px);border-radius:14px}
   .search-foot{display:none}
 }
+
+.blog-figure{margin:0 0 24px}
+.blog-figure figcaption{margin-top:8px;font-size:14px;line-height:1.5;color:var(--muted);text-align:center}

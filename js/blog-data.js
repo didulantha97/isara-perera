@@ -16,6 +16,304 @@
    ============================================================ */
 window.BLOG_POSTS = [
   {
+    slug: 'self-hosted-n8n-ai-product-assistant',
+    title: 'Self-Hosting n8n from GitHub: Building an AI Product Assistant with Google Sheets and Gmail Alerts',
+    date: '2026-09-30',
+    tags: ['n8n', 'AI Agents', 'Automation', 'OpenAI', 'Google Cloud'],
+    summary: 'How I ran the free n8n Community Edition on my own machine, then built a chat assistant that answers product questions from a Google Sheets catalog and emails me when a customer asks about something that is out of stock.',
+    body: `
+      <p class="blog-lead">n8n is a workflow automation tool with built-in AI agent nodes. The Community Edition is open source on GitHub and free to run yourself. In this post I install it locally, build a product chatbot on top of a Google Sheets catalog, and add a second agent that sends an email alert whenever the chatbot reports an out-of-stock product.</p>
+      <div class="blog-equation">Chat message → AI Agent + Google Sheets → Reply &nbsp;|&nbsp; Reply → Extractor agent → If → Gmail alert</div>
+
+      <nav class="blog-toc" aria-label="Contents">
+        <strong>Contents</strong>
+        <ol>
+          <li><a href="#why">Why self-host n8n</a></li>
+          <li><a href="#install">Running n8n from GitHub</a></li>
+          <li><a href="#architecture">What we are building</a></li>
+          <li><a href="#trigger">Step 1: The chat trigger</a></li>
+          <li><a href="#google">Step 2: Google Cloud OAuth for Sheets</a></li>
+          <li><a href="#openai">Step 3: A restricted OpenAI key</a></li>
+          <li><a href="#agent">Step 4: The product assistant agent</a></li>
+          <li><a href="#test">Step 5: Testing the chat</a></li>
+          <li><a href="#alerts">Step 6: Out-of-stock email alerts</a></li>
+          <li><a href="#lessons">What I learned</a></li>
+          <li><a href="#practices">Best practices</a></li>
+          <li><a href="#download">Download the workflow</a></li>
+          <li><a href="#conclusion">Conclusion</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="why">Why self-host n8n</h2>
+      <p>n8n Cloud is the paid, hosted version. The <strong>Community Edition</strong> is the same core product, published on GitHub, and you run it on your own laptop, server or container. For learning and personal projects it is the easiest way to start: there is no subscription, and your credentials and execution data stay on your own machine.</p>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-community-edition.png" alt="n8n pricing page showing the Community Edition card: a standard, self-hosted version of n8n is available on GitHub" loading="lazy">
+        <figcaption>The Community Edition is linked from the n8n pricing page and lives on GitHub.</figcaption>
+      </figure>
+      <div class="blog-callout"><strong>Trade-off:</strong> self-hosting means you handle updates, backups and security yourself. Some features, such as SSO and advanced user management, are only in the paid plans.</div>
+
+      <h2 id="install">Running n8n from GitHub</h2>
+      <p>The source code is at <a href="https://github.com/n8n-io/n8n" target="_blank" rel="noopener">github.com/n8n-io/n8n</a>. You don't need to build it from source. The repository's README gives two ways to start it.</p>
+      <p><strong>Option A: npx</strong> (quickest, needs Node.js 20 or newer):</p>
+      <pre><code>npx n8n</code></pre>
+      <p><strong>Option B: Docker</strong> (recommended, because the data is kept in a volume and upgrades are simple):</p>
+      <pre><code>docker volume create n8n_data
+
+docker run -it --rm --name n8n \\
+  -p 5678:5678 \\
+  -v n8n_data:/home/node/.n8n \\
+  docker.n8n.io/n8nio/n8n</code></pre>
+      <p>Either way, open <code>http://localhost:5678</code>, create the owner account, and you get the workflow editor. Every URL in the rest of this post starts with <code>localhost:5678</code> because that is where my instance runs.</p>
+
+      <h2 id="architecture">What we are building</h2>
+      <p>The finished workflow has two paths that start from the same chat message:</p>
+      <div class="blog-diagram">
+        <svg viewBox="20 30 1020 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow: a chat message goes to the AI Agent, which uses an OpenAI model and a Google Sheets tool, and sends its reply back to the chat. The same reply also goes to a second extractor agent, then an If node, and if any product is out of stock, a Gmail node sends an alert email.">
+          <defs><marker id="n8n-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" class="head"/></marker></defs>
+          <rect x="35" y="50" rx="14" width="180" height="100" class="box"/>
+          <text x="125" y="92" text-anchor="middle" class="t">Chat trigger</text>
+          <text x="125" y="120" text-anchor="middle" class="s">user question</text>
+
+          <rect x="275" y="50" rx="14" width="200" height="100" class="box hl"/>
+          <text x="375" y="92" text-anchor="middle" class="t">AI Agent</text>
+          <text x="375" y="120" text-anchor="middle" class="s">OpenAI + Sheets tool</text>
+
+          <rect x="535" y="50" rx="14" width="180" height="100" class="box"/>
+          <text x="625" y="92" text-anchor="middle" class="t">Chat</text>
+          <text x="625" y="120" text-anchor="middle" class="s">send reply</text>
+
+          <line x1="215" y1="100" x2="273" y2="100" class="ln" marker-end="url(#n8n-arrow)"/>
+          <line x1="475" y1="100" x2="533" y2="100" class="ln" marker-end="url(#n8n-arrow)"/>
+
+          <rect x="275" y="240" rx="14" width="200" height="100" class="box"/>
+          <text x="375" y="282" text-anchor="middle" class="t">Extractor agent</text>
+          <text x="375" y="310" text-anchor="middle" class="s">finds out-of-stock</text>
+
+          <rect x="535" y="240" rx="14" width="180" height="100" class="box"/>
+          <text x="625" y="282" text-anchor="middle" class="t">If</text>
+          <text x="625" y="310" text-anchor="middle" class="s">output not empty</text>
+
+          <rect x="775" y="240" rx="14" width="220" height="100" class="box hl"/>
+          <text x="885" y="282" text-anchor="middle" class="t">Gmail</text>
+          <text x="885" y="310" text-anchor="middle" class="s">stock alert email</text>
+
+          <line x1="375" y1="150" x2="375" y2="238" class="ln" marker-end="url(#n8n-arrow)"/>
+          <line x1="475" y1="290" x2="533" y2="290" class="ln" marker-end="url(#n8n-arrow)"/>
+          <line x1="715" y1="290" x2="773" y2="290" class="ln" marker-end="url(#n8n-arrow)"/>
+        </svg>
+      </div>
+      <ol>
+        <li>The customer-facing path answers product questions using only rows from the catalog sheet.</li>
+        <li>The alert path reads the assistant's reply, pulls out any product it said was unavailable, and emails me.</li>
+      </ol>
+
+      <h2 id="trigger">Step 1: The chat trigger</h2>
+      <p>Create a new workflow and add the <strong>When chat message received</strong> trigger. It gives the workflow a chat UI, both inside the editor and as a hosted page.</p>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-chat-trigger-canvas.png" alt="n8n editor canvas with a single When chat message received trigger node and an Open chat button" loading="lazy">
+        <figcaption>The starting point: one chat trigger node.</figcaption>
+      </figure>
+      <p>In the node settings I turned on <strong>Make Chat Publicly Available</strong>, chose <strong>Hosted Chat</strong> mode, left authentication off for local testing, and wrote two initial messages. n8n gives you a Chat URL in the form <code>http://localhost:5678/webhook/&lt;id&gt;/chat</code>.</p>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-chat-trigger-settings.png" alt="Chat trigger settings showing the chat URL, Make Chat Publicly Available enabled, Hosted Chat mode, no authentication and two initial messages. The output panel shows action sendMessage, a sessionId and chatInput Hi" loading="lazy">
+        <figcaption>Each message arrives as <code>action</code>, <code>sessionId</code> and <code>chatInput</code>.</figcaption>
+      </figure>
+      <p>The trigger outputs three fields. <code>chatInput</code> is the text the user typed, and later nodes read it with <code>{{ $json.chatInput }}</code>.</p>
+      <p>Once the workflow is published, the hosted page looks like this:</p>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-hosted-chat.png" alt="n8n hosted chat page with the header Hi there, the subtitle Start a chat. We're here to help you 24/7, and the two initial bot messages" loading="lazy">
+        <figcaption>The hosted chat page, served by n8n itself.</figcaption>
+      </figure>
+      <p>One more setting matters here. Under <strong>Options</strong>, set <strong>Response Mode</strong> to <strong>Using Response Nodes</strong>. The reply is then sent by an explicit <strong>Chat → Send Message</strong> node, not automatically from the last node. The workflow has two branches, so you need to control which output reaches the user.</p>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-chat-response-mode.png" alt="Chat trigger settings with Response Mode set to Using Response Nodes, and the output showing chatInput: do you have any 100$ android?" loading="lazy">
+        <figcaption>Response Mode set to <em>Using Response Nodes</em>.</figcaption>
+      </figure>
+
+      <h2 id="google">Step 2: Google Cloud OAuth for Sheets</h2>
+      <p>The product catalog is a Google Sheet with the columns <strong>SKU, Name, Category, Price, Description, Availability</strong>. For n8n to read it, you need an OAuth client in Google Cloud.</p>
+      <p>First, create a project. I called mine <code>n8nApp</code>:</p>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-google-cloud-project.png" alt="Google Cloud IAM and admin settings for a project named n8nApp" loading="lazy">
+        <figcaption>A dedicated Google Cloud project for n8n.</figcaption>
+      </figure>
+      <p>Then, in that project:</p>
+      <ol>
+        <li><strong>Enable the APIs</strong>: Google Sheets API and Google Drive API (for listing files). Enable the Gmail API as well, because you will need it in Step 6.</li>
+        <li><strong>Configure the consent screen</strong> under <em>Google Auth Platform → Branding / Audience</em>. For personal use, keep the app in <em>Testing</em> and add your own Google account as a test user.</li>
+        <li><strong>Create an OAuth client</strong> under <em>Clients</em>, with the type <em>Web application</em>.</li>
+        <li><strong>Add the redirect URI</strong> that n8n shows you: <code>http://localhost:5678/rest/oauth2-credential/callback</code>.</li>
+      </ol>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-google-oauth-client.png" alt="Google Auth Platform OAuth client of type Web application named n8nWepApp, with authorised redirect URIs pointing at localhost:5678" loading="lazy">
+        <figcaption>The OAuth client, with localhost redirect URIs.</figcaption>
+      </figure>
+      <p>Back in n8n, create a <strong>Google Sheets OAuth2 API</strong> credential. Paste in the Client ID and Client Secret, click <strong>Sign in with Google</strong> and approve access.</p>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-google-sheets-credential.png" alt="n8n Google Sheets account credential dialog with the OAuth Redirect URL, Client ID and Client Secret fields" loading="lazy">
+        <figcaption>The n8n credential dialog shows the exact redirect URL to copy into Google Cloud.</figcaption>
+      </figure>
+      <div class="blog-callout warning"><strong>Keep the secret safe:</strong> Google shows the client secret only once, when you create it. Store it in a password manager, and never commit it to a repository.</div>
+
+      <h2 id="openai">Step 3: A restricted OpenAI key</h2>
+      <p>The agent needs a language model. I used the <strong>OpenAI Chat Model</strong> node, with <code>gpt-4.1</code> for the main assistant and <code>gpt-5-mini</code> for the smaller extractor agent in Step 6. When I created the API key, I chose <strong>Restricted</strong> permissions rather than <em>All</em>. The key can list models and call the model endpoint, and nothing else.</p>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-openai-key-permissions.png" alt="OpenAI API key permissions set to Restricted: Agents Read, List models Read, Responses Write, and Traces, Vaults, Voices, Text-to-speech and Realtime set to None" loading="lazy">
+        <figcaption>Only the permissions the workflow needs.</figcaption>
+      </figure>
+      <p>If the key leaks from a self-hosted box, the damage is limited to text generation. It cannot touch files, audio or anything else on the account. Make sure the key has write access to whichever endpoint your node version calls (Chat Completions or Responses). If it doesn't, the node fails with a permission error.</p>
+
+      <h2 id="agent">Step 4: The product assistant agent</h2>
+      <p>Add an <strong>AI Agent</strong> node after the trigger and connect:</p>
+      <ul>
+        <li><strong>Chat Model</strong>: the OpenAI Chat Model with <code>gpt-4.1</code>.</li>
+        <li><strong>Tool</strong>: a Google Sheets tool, <em>Get row(s) in sheet</em>, pointed at the <code>product-catalog</code> spreadsheet and sheet.</li>
+      </ul>
+      <p>Set the agent's <strong>Source for Prompt</strong> to <em>Define below</em> so you can write the prompt yourself. Then connect the agent's output to a <strong>Chat → Send Message</strong> node with the message <code>{{ $json.output }}</code>, so the reply goes back to the user.</p>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-agent-workflow.png" alt="Workflow with When chat message received connected to AI Agent, which has an OpenAI Chat Model and a Google Sheets Get row(s) tool returning 1456 items, followed by a Chat Send Message node" loading="lazy">
+        <figcaption>Trigger → AI Agent (model + Sheets tool) → Chat reply.</figcaption>
+      </figure>
+      <p>The prompt is what makes the agent reliable. It tells the model what the sheet contains, how to search it, and that it must not invent anything:</p>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-agent-system-prompt.png" alt="AI Agent prompt: You are a helpful product assistant with access to a Google Sheets tool containing the product catalog, with rules to answer only from retrieved rows and always include SKU, Name, Price and Availability" loading="lazy">
+        <figcaption>The agent prompt, with the user's message injected at the end.</figcaption>
+      </figure>
+      <pre><code>You are a helpful product assistant.
+
+You have access to a Google Sheets tool that contains the
+full product catalog.
+- Each row has: SKU, Name, Category, Price, Description, Availability.
+- You can search in Name, Category, and Description for keywords.
+- You can filter by Price (minPrice, maxPrice) and
+  Availability (e.g. In Stock).
+
+When a user asks about a product:
+1. Use the Google Sheets tool to look up relevant rows.
+2. Answer ONLY using information from the retrieved rows.
+3. Always include SKU, Name, Price, and Availability in your answer.
+4. If no relevant rows are found, say: "I couldn't find any
+   matching products in the catalog."
+5. Be concise, clear, and friendly in your replies.
+
+Do not invent products or details that are not in the sheet.
+If you find no products in the spreadsheet that match the
+user's query, just tell that those products don't exist.
+
+This was the chat message from the user:
+{{ $json.chatInput }}</code></pre>
+
+      <h2 id="test">Step 5: Testing the chat</h2>
+      <p>Click <strong>Open chat</strong> in the editor and ask a question. I asked <em>"do you have any 100$ android?"</em>. The Logs panel shows every step: the trigger, the agent, the model call, the Sheets lookup, a second model call to write the answer, and finally the Chat reply.</p>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-chat-logs.png" alt="n8n editor with the chat panel showing an answer about the LG G2 16GB for 99.99 dollars, and the logs panel showing the run succeeded in 15.353 seconds using about 170740 tokens" loading="lazy">
+        <figcaption>The run succeeded in about 15 seconds and used about 170,740 tokens.</figcaption>
+      </figure>
+      <p>The same conversation also works on the public hosted URL:</p>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-hosted-chat-answer.png" alt="Hosted chat page in the browser answering with the LG G2 16GB SIM Free Smartphone, SKU 2738, price 99.99 dollars, In Stock with 140 units, followed by a Samsung microwave marked as not a phone" loading="lazy">
+        <figcaption>The hosted chat returns SKU, price and availability, as the prompt requires.</figcaption>
+      </figure>
+      <p>The first result is correct: an LG G2 for $99.99 with its SKU and stock level. The second result is a Samsung <em>microwave</em>, which the model included and labelled "not a phone". That tells me something about the tool setup, which I cover in <a href="#lessons">What I learned</a>.</p>
+
+      <h2 id="alerts">Step 6: Out-of-stock email alerts</h2>
+      <p>When a customer asks about a product we don't have, the business should know about it. I added a second branch from the AI Agent's output.</p>
+      <h3>The extractor agent</h3>
+      <p>A second <strong>AI Agent</strong> (named <em>AI Agent1</em>, with its own OpenAI Chat Model using <code>gpt-5-mini</code>) receives both the user's message and the first agent's reply. It has one job: return a list of products that the reply said were unavailable.</p>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-extractor-prompt.png" alt="Extractor agent prompt: You are a data extractor. Identify all products the customer service reply says are out of stock, output name, SKU and price separated by commas, one per line, or an empty string" loading="lazy">
+        <figcaption>The extractor prompt reads the output of the first agent by node name.</figcaption>
+      </figure>
+      <pre><code>You are a data extractor.
+
+Task: From the Customer service reply, identify all products
+that are said to be out of stock.
+
+Consider "out of stock", "sold out", "currently unavailable",
+"no stock", "not available" as signals of being unavailable.
+
+Do NOT include products that are "in stock" or "available".
+Do NOT include products that were not mentioned in the chat.
+
+Output the following information for each product that's out
+of stock: product name, Sku, Price. Fields should be
+separated by commas. Output one product per line.
+
+If none are out of stock, output an empty string.
+
+User message:
+{{ $('When chat message received').item.json.chatInput }}
+
+Customer service reply:
+{{ $('AI Agent').item.json.output }}</code></pre>
+      <p>The expressions <code>$('When chat message received')</code> and <code>$('AI Agent')</code> read data from earlier nodes <em>by name</em>. If you rename a node, you have to update these references too.</p>
+
+      <h3>If → Gmail</h3>
+      <p>An <strong>If</strong> node checks that the extractor's <code>{{ $json.output }}</code> <em>is not empty</em>. Only the <strong>true</strong> branch continues to a <strong>Gmail → Send a message</strong> node. It uses a Google OAuth credential from the same Cloud project, with the Gmail API enabled.</p>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-full-workflow.png" alt="Complete n8n workflow: chat trigger, AI Agent with OpenAI and Google Sheets, Chat reply, and a second branch with AI Agent1, OpenAI Chat Model1, an If node and a Gmail Send a message node" loading="lazy">
+        <figcaption>The complete workflow, with both branches.</figcaption>
+      </figure>
+      <p>The Gmail node sends to my own address with the subject <strong>Alert: Product Out of Stock</strong>. The message reads the extractor's output by node name:</p>
+      <pre><code>The Following product are out of stock:
+
+{{ $('AI Agent1').item.json.output }}</code></pre>
+      <p>When I asked about a washer dryer that was listed as unavailable, this arrived in my inbox:</p>
+      <figure class="blog-figure">
+        <img src="assets/img/n8n-stock-alert-email.png" alt="Gmail message titled Alert: Product Out of Stock listing Candy GVSW496DCAB 80 9kg 6kg 1400 Spin Washer Dryer in Black, SKU 32959, 1400 pounds, sent automatically with n8n" loading="lazy">
+        <figcaption>The alert email: name, SKU and price, in the format the extractor was asked for.</figcaption>
+      </figure>
+
+      <h2 id="lessons">What I learned</h2>
+      <div class="blog-cards">
+        <div><span class="num">1,456</span><strong>Rows sent to the model</strong>The Sheets tool has no filters configured, so it returned the whole catalog on every call.</div>
+        <div><span class="num">~170k</span><strong>Tokens per question</strong>Most of those tokens were catalog rows. That is slow (about 15 s) and expensive at scale.</div>
+        <div><span class="num">1</span><strong>Irrelevant result</strong>The microwave appeared because the model had to search a very large context by itself.</div>
+      </div>
+      <p>There is also a mismatch between the prompt and the tool. The prompt says the agent <em>can filter by Price and Availability</em>, but the Sheets tool node has no filter options set. The model cannot filter anything, so it reads every row and tries to do the filtering itself.</p>
+      <p>The workflow works, but the numbers show the next step. The model should receive <em>fewer, more relevant</em> rows. Some options:</p>
+      <ul>
+        <li>Let the agent fill in <strong>filters</strong> on the Sheets tool (for example Category or Availability) with <code>$fromAI()</code> parameters, so the tool returns a subset.</li>
+        <li>Move the catalog to a database, or a vector store for semantic search, and query it instead of reading the whole sheet.</li>
+        <li>Add <strong>Memory</strong> (the empty slot on the agent) so follow-up questions such as <em>"and in black?"</em> keep their context.</li>
+        <li>Keep the split between models: the extractor already runs on <code>gpt-5-mini</code>, because its task is narrow and it doesn't need the larger model.</li>
+      </ul>
+
+      <h2 id="practices">Best practices</h2>
+      <ul class="blog-checklist">
+        <li>Run n8n with Docker and a named volume, so credentials and workflows survive restarts and upgrades.</li>
+        <li>Set <code>N8N_ENCRYPTION_KEY</code> yourself and back it up. Without it, saved credentials cannot be decrypted after a migration.</li>
+        <li>Use a dedicated Google Cloud project and keep the OAuth app in Testing, with only your own account as a test user.</li>
+        <li>Create restricted API keys with only the endpoints the workflow calls.</li>
+        <li>Turn on chat authentication, or put the instance behind a reverse proxy, before you expose it beyond <code>localhost</code>.</li>
+        <li>Use <em>Using Response Nodes</em> when a workflow has more than one branch, so you control exactly what the user sees.</li>
+        <li>Check the token count in the Logs panel after every change. It shows cost and latency problems early.</li>
+        <li>Tell the model to answer only from tool results, and still test it with questions that should return nothing.</li>
+      </ul>
+
+      <h2 id="download">Download the workflow</h2>
+      <p>You can import the full workflow into your own instance: <a href="assets/files/n8n-product-assistant-workflow.json" download>n8n-product-assistant-workflow.json</a>. In n8n, open a new workflow, click <strong>⋯ → Import from File</strong>, then:</p>
+      <ol>
+        <li>Select your own OpenAI, Google Sheets and Gmail credentials on the nodes that need them.</li>
+        <li>Pick your catalog spreadsheet and sheet in the Google Sheets tool.</li>
+        <li>Change the Gmail <strong>To</strong> address to your own email.</li>
+      </ol>
+      <div class="blog-callout"><strong>Note:</strong> the file has no credentials, spreadsheet IDs or email addresses in it. n8n exports only credential <em>references</em>, never secrets, but I removed those as well.</div>
+
+      <h2 id="conclusion">Conclusion</h2>
+      <p>Getting n8n running from GitHub takes one command. After that, a useful AI workflow is mostly configuration: a chat trigger, an agent with a model and a tool, a clear prompt, and a second small agent that turns conversations into business signals. The Google OAuth setup takes the longest, and you only do it once.</p>
+      <blockquote>The first version answers questions. The version worth keeping also tells you what your customers want and can't get.</blockquote>
+
+      <p class="blog-note-small">Built and tested September 2026 on a local n8n Community Edition instance. The n8n UI, node options and Google Cloud console layout change often, so check the current docs if a screen looks different.</p>
+      <ul class="blog-sources">
+        <li><a href="https://github.com/n8n-io/n8n" target="_blank" rel="noopener">n8n on GitHub (Community Edition)</a></li>
+        <li><a href="https://docs.n8n.io/hosting/" target="_blank" rel="noopener">n8n self-hosting documentation</a></li>
+        <li><a href="https://docs.n8n.io/integrations/builtin/credentials/google/oauth-single-service/" target="_blank" rel="noopener">n8n: Google OAuth2 single service credentials</a></li>
+        <li><a href="https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-langchain.chattrigger/" target="_blank" rel="noopener">n8n: Chat Trigger node</a></li>
+      </ul>
+    `
+  },
+  {
     slug: 'agentforce-vibes-mobile-mcp-tools-lwc',
     title: 'Native Device Features in LWC with Agentforce Vibes and the Salesforce DX MCP Mobile Tools',
     date: '2026-09-27',
