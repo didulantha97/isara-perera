@@ -16,6 +16,268 @@
    ============================================================ */
 window.BLOG_POSTS = [
   {
+    slug: 'pocketly-local-first-flutter-finance-app',
+    title: 'Building Pocketly: A Local-First, Encrypted Personal Finance App in Flutter',
+    date: '2026-10-01',
+    tags: ['Flutter', 'Dart', 'Mobile', 'Privacy', 'Security'],
+    summary: 'Why I built a budgeting app with no accounts, no cloud and no tracking, and how it works inside: AES-256 encrypted storage, a biometric lock with a PBKDF2 PIN fallback, integer money, a 50/30/20 engine, loan amortization and on-device reminders.',
+    body: `
+      <p class="blog-lead">Most budgeting apps want you to create an account, link your bank and send your spending history to their servers. I wanted the opposite: an app where every number stays on my phone, encrypted, and every chart is calculated on the device. <strong>Pocketly</strong> is that app. It is a Flutter app for iOS and Android, it is open source, and it makes no network calls at all.</p>
+      <div class="blog-equation">Log → Encrypted on device → Analysed on device → Nothing leaves the phone</div>
+
+      <nav class="blog-toc" aria-label="Contents">
+        <strong>Contents</strong>
+        <ol>
+          <li><a href="#why">Why local-first</a></li>
+          <li><a href="#features">What the app does</a></li>
+          <li><a href="#stack">Tech stack and architecture</a></li>
+          <li><a href="#security">Security: encryption, biometrics and the PIN</a></li>
+          <li><a href="#money">Money as integers</a></li>
+          <li><a href="#engine">The 50/30/20 engine</a></li>
+          <li><a href="#goals">Goals and automatic allocation</a></li>
+          <li><a href="#loans">Loans and amortization</a></li>
+          <li><a href="#reminders">Reminders without a server</a></li>
+          <li><a href="#privacy">Your data rights: export and wipe</a></li>
+          <li><a href="#banksync">Bank sync, switched off on purpose</a></li>
+          <li><a href="#lessons">What I learned</a></li>
+          <li><a href="#run">Run it yourself</a></li>
+          <li><a href="#conclusion">Conclusion</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="why">Why local-first</h2>
+      <p>A spending history says a lot about a person: where they live, what they buy, who they pay, and how much they earn. For a personal budget, I don't need any of that to sit on someone else's server. I need three things:</p>
+      <ul>
+        <li>Logging an expense should take a couple of taps, or I will stop doing it.</li>
+        <li>The app should tell me, in plain language, whether I am on track this month.</li>
+        <li>If someone picks up my phone, they shouldn't be able to see any of it.</li>
+      </ul>
+      <p>Pocketly started as a SwiftUI prototype that only handled Sri Lankan rupees and imported Commercial Bank statements. That prototype is still in the repository under <code>MonthlyMoneyManager/</code>. The current app is a rewrite in Flutter, so it runs on both iOS and Android, and it supports twelve currencies.</p>
+
+      <h2 id="features">What the app does</h2>
+      <p>The app has five tabs: <strong>Ledger</strong>, <strong>Insights</strong>, <strong>Goals</strong>, <strong>Loans</strong> and <strong>Settings</strong>. The Ledger opens on the current month, with the net total, income and spending at the top, a search box, filters for income, expense and transfer, and a <strong>Log</strong> button.</p>
+      <div class="blog-cards">
+        <div><span class="num">2 taps</span><strong>Speed-log ledger</strong>A numeric keypad, shortcuts for the categories you use most, "Repeat last", and recurring entries.</div>
+        <div><span class="num">50/30/20</span><strong>Insights</strong>Needs, Wants and Savings targets, or 70/20/10, 80/20 or your own split, by month or by year.</div>
+        <div><span class="num">%</span><strong>Goals</strong>Short- and long-term goals that can take a fixed percentage of every income you log.</div>
+        <div><span class="num">P + I</span><strong>Loans</strong>Money you owe and money owed to you, with a full amortization schedule.</div>
+        <div><span class="num">12</span><strong>Currencies</strong>Log in any of them. Insights converts using exchange rates you enter yourself.</div>
+        <div><span class="num">0</span><strong>Network calls</strong>No accounts, no analytics, no crash reporting and no ads.</div>
+      </div>
+
+      <h2 id="stack">Tech stack and architecture</h2>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Area</th><th>Choice</th></tr></thead>
+          <tbody>
+            <tr><td>Framework</td><td>Flutter 3.47 / Dart 3.13</td></tr>
+            <tr><td>Architecture</td><td>Clean Architecture: core, data, domain, presentation</td></tr>
+            <tr><td>State</td><td>BLoC / Cubit with <code>flutter_bloc</code></td></tr>
+            <tr><td>Storage</td><td>Hive CE, AES-256 encrypted boxes, key in the iOS Keychain / Android Keystore</td></tr>
+            <tr><td>Security</td><td><code>local_auth</code> biometrics, PBKDF2-hashed 4 to 6 digit PIN</td></tr>
+            <tr><td>Reminders</td><td><code>flutter_local_notifications</code> and <code>timezone</code>, scheduled on the device</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The layers depend inwards only. The <strong>domain</strong> layer holds the entities (<code>Money</code>, <code>Transaction</code>, <code>Goal</code>, <code>Loan</code>) and the pure engines that do the maths. It doesn't import Flutter or Hive, so every engine can be unit tested with plain Dart.</p>
+      <div class="blog-diagram">
+        <svg viewBox="20 30 1020 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Layers: the presentation layer with screens and cubits calls domain use cases and engines. The data layer implements the domain repository contracts using encrypted Hive boxes. The core layer provides security, notifications, theme and feature flags.">
+          <defs><marker id="pk-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" class="head"/></marker></defs>
+          <rect x="35" y="50" rx="14" width="260" height="110" class="box"/>
+          <text x="165" y="95" text-anchor="middle" class="t">Presentation</text>
+          <text x="165" y="125" text-anchor="middle" class="s">screens · cubits · widgets</text>
+
+          <rect x="390" y="50" rx="14" width="280" height="110" class="box hl"/>
+          <text x="530" y="95" text-anchor="middle" class="t">Domain</text>
+          <text x="530" y="125" text-anchor="middle" class="s">entities · engines · use cases</text>
+
+          <rect x="765" y="50" rx="14" width="260" height="110" class="box"/>
+          <text x="895" y="95" text-anchor="middle" class="t">Data</text>
+          <text x="895" y="125" text-anchor="middle" class="s">repositories · Hive boxes</text>
+
+          <line x1="295" y1="105" x2="388" y2="105" class="ln" marker-end="url(#pk-arrow)"/>
+          <line x1="765" y1="105" x2="672" y2="105" class="ln" marker-end="url(#pk-arrow)"/>
+
+          <rect x="240" y="220" rx="14" width="580" height="90" class="box"/>
+          <text x="530" y="258" text-anchor="middle" class="t">Core</text>
+          <text x="530" y="287" text-anchor="middle" class="s">security · notifications · theme · feature flags</text>
+        </svg>
+      </div>
+      <h3>Why Hive and not Isar</h3>
+      <p>My original spec allowed Isar or Hive. Isar 3 is no longer maintained, and its code generator doesn't build on current Dart SDKs. Hive CE works without code generation. Each record is stored as a JSON string keyed by its id, in boxes named with a version suffix (<code>transactions_v1</code>, <code>goals_v1</code> and so on). Schema changes stay in the DTOs in <code>data/models/</code>. If one record can't be decoded, it is skipped and logged, so one bad row can't break the whole ledger.</p>
+
+      <h2 id="security">Security: encryption, biometrics and the PIN</h2>
+      <h3>Encryption at rest</h3>
+      <p>On first launch, <code>DatabaseKeyProvider</code> generates a 32-byte key with <code>Random.secure()</code> and saves it in the platform keystore. Every Hive box is opened with an <code>HiveAesCipher</code> using that key. The key only exists in the keystore and in memory. On iOS the Keychain item is <em>this-device-only</em> and not synced to iCloud. On Android, <code>allowBackup</code> is off, so the data isn't copied into cloud backups or device transfers.</p>
+
+      <h3>Biometric lock</h3>
+      <p>The app asks for Face ID or a fingerprint when it starts and when it comes back from the background. It asks again before you delete an entry, export your data, change the PIN or wipe everything. I turned off the system passcode fallback (<code>biometricOnly: true</code>), so the fallback is Pocketly's own PIN pad.</p>
+      <p>The lock screen is drawn in <code>MaterialApp.builder</code>, above the Navigator. That means it also covers pushed screens, dialogs and bottom sheets. If the lock screen were just another route, a bottom sheet left open before the app went to the background could still be visible on top of it.</p>
+
+      <h3>The PIN is never stored</h3>
+      <p>The PIN fallback follows normal password storage rules:</p>
+      <ul>
+        <li>The PIN is hashed with <strong>PBKDF2-HMAC-SHA256</strong>, <strong>120,000 iterations</strong> and a random 16-byte salt. Only the hash and the salt are saved.</li>
+        <li>The comparison runs in constant time, so response timing doesn't reveal how close a guess was.</li>
+        <li>The key stretching runs in <code>Isolate.run</code>, off the UI thread, so the PIN pad doesn't freeze.</li>
+        <li>Obvious PINs like <code>0000</code>, <code>1234</code> and <code>987654</code> are rejected.</li>
+        <li>After 5 wrong attempts, the pad locks for 30 seconds, then 60, then 120, doubling each time up to one hour. The failure count is saved in the keystore, so closing the app doesn't reset it.</li>
+      </ul>
+      <pre><code>// pin_service.dart: 30s, 60s, 120s ... capped at 1 hour
+if (failures >= freeAttempts) {
+  final seconds = min(3600, 30 * pow(2, failures - freeAttempts).toInt());
+  final lockEnd = _clock().add(Duration(seconds: seconds));
+  await _store.write(_lockedUntilKey, lockEnd.toIso8601String());
+  throw PinLockedOutException(lockEnd);
+}</code></pre>
+
+      <h3>Privacy blur</h3>
+      <p>The app switcher on iOS and the recents screen on Android show a snapshot of the last screen. <code>PrivacyShield</code> listens for lifecycle changes and blurs the whole UI as soon as the app becomes inactive, so your balances never appear there. There is also a <strong>Hide balances</strong> toggle that masks every amount, for when you open the app in public.</p>
+      <div class="blog-callout"><strong>Notifications don't show amounts.</strong> A notification can appear on a locked phone's screen, so reminder text names the bill or category but never the amount.</div>
+
+      <h2 id="money">Money as integers</h2>
+      <p>Floating-point numbers can't represent most decimal amounts exactly. In Dart, <code>0.1 + 0.2</code> is <code>0.30000000000000004</code>, and over thousands of entries those errors add up. In Pocketly, <code>Money</code> is an integer number of <strong>minor units</strong> (cents, or the currency's smallest unit) plus an ISO currency code. Yen has 0 decimals and most other currencies have 2.</p>
+      <pre><code>class Money {
+  const Money(this.minorUnits, this.currencyCode);
+  final int minorUnits;      // 1234 = € 12.34
+  final String currencyCode; // 'EUR'
+
+  Money operator +(Money other) {
+    _assertSameCurrency(other); // throws on EUR + USD
+    return Money(minorUnits + other.minorUnits, currencyCode);
+  }
+}</code></pre>
+      <p>Adding euros to dollars throws an error. To combine currencies you have to go through <code>CurrencyConverter</code>, which uses rates you enter in Settings. The app never downloads rates. If you log something in a currency with no rate, Insights leaves it out and tells you which currencies are missing, rather than guessing.</p>
+
+      <h2 id="engine">The 50/30/20 engine</h2>
+      <p>The 50/30/20 rule splits your income into three parts: <strong>50% for needs</strong> (rent, groceries, utilities), <strong>30% for wants</strong>, and <strong>20% for savings and paying off debt</strong>. Every category in Pocketly belongs to one of those three buckets. You can switch to 70/20/10, 80/20 or a custom split, as long as the three numbers add up to 100.</p>
+      <p><code>AllocationEngine</code> is a pure function. It takes the transactions, categories, framework and period, and returns a report:</p>
+      <ul>
+        <li>Transfers are ignored, because moving money between your own accounts isn't spending.</li>
+        <li><strong>Savings</strong> counts expenses in the savings bucket (debt payments, goal contributions, investments) <em>plus</em> any income you didn't spend.</li>
+        <li>Money you take out of a goal reduces savings. It doesn't count as new income.</li>
+      </ul>
+      <p>The report then turns into plain-language recommendations, sorted by severity. If Needs or Wants are over target, it names the two biggest categories in that bucket and tells you how much to cut. If the month isn't over yet, it projects your current pace to the end of the period:</p>
+      <pre><code>// On track so far, but where will we end up?
+if (elapsed > 0.1 &amp;&amp; elapsed &lt; 1) {
+  final projected = (b.actual.minorUnits / elapsed).round();
+  if (projected > b.target.minorUnits) {
+    // "At the current pace you'll spend EUR 1,240.00 on wants
+    //  this period — EUR 140.00 over target."
+  }
+}</code></pre>
+      <p>The projection waits until 10% of the period has passed. Before that, one big purchase on the 1st of the month would make the forecast look much worse than it is.</p>
+
+      <h2 id="goals">Goals and automatic allocation</h2>
+      <p>A goal has a target, a current amount, an optional deadline and an <strong>automatic allocation percentage</strong>. When you log income, <code>RecordTransaction</code> saves it and then <code>GoalAllocator</code> sends that percentage to each goal. For example, 10% of every salary could go to an emergency fund.</p>
+      <ul>
+        <li>The percentages across all goals can't add up to more than 100%.</li>
+        <li>A goal never gets more than it still needs, and completed goals are skipped.</li>
+        <li>Each allocation is also written to the ledger as a "goal contribution" expense, so it shows up in the Savings bucket.</li>
+        <li>Allocation only happens for <em>new</em> income. Editing an old salary entry doesn't fund your goals a second time. Received loans and goal withdrawals don't trigger it either.</li>
+      </ul>
+      <p>The same use case checks category limits. If an expense takes a category past <strong>80%</strong> or <strong>100%</strong> of its monthly limit, you get an alert. Each alert has a key in the form <code>category|yyyy-MM|threshold</code>, and the app saves it once the alert fires, so you get each warning once per month, not on every expense after it.</p>
+
+      <h2 id="loans">Loans and amortization</h2>
+      <p>The Loans tab handles both directions: money you borrowed and money you lent. A loan has a principal, an annual interest rate, a term, a payment frequency and a compounding frequency. The last two don't have to match. Many loans compound annually but are paid monthly.</p>
+      <p><code>AmortizationEngine</code> first converts the nominal annual rate <em>r</em> into the effective rate per payment, where <em>m</em> is compounding periods per year and <em>p</em> is payments per year:</p>
+      <div class="blog-equation">i = (1 + r / m)<sup>m / p</sup> − 1 &nbsp;&nbsp;·&nbsp;&nbsp; A = P · i / (1 − (1 + i)<sup>−n</sup>)</div>
+      <p>Then it builds the schedule row by row in minor units. Each row's interest is rounded to the cent, and the <strong>last payment absorbs the rounding difference</strong>, so the balance ends at exactly zero.</p>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>€10,000 at 6%, 24 monthly payments</th><th>Compounded monthly</th><th>Compounded annually</th></tr></thead>
+          <tbody>
+            <tr><td>Rate per payment <em>i</em></td><td>0.5000%</td><td>0.4868%</td></tr>
+            <tr><td>Monthly payment</td><td>€443.21</td><td>€442.49</td></tr>
+            <tr><td>Month 1: interest / principal</td><td>€50.00 / €393.21</td><td>€48.68 / €393.81</td></tr>
+            <tr><td>Final payment</td><td>€443.11</td><td>€442.50</td></tr>
+            <tr><td>Total interest</td><td>€636.94</td><td>€619.77</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>When you record a loan payment, the app marks that period as paid and also adds the payment to the ledger. The loan detail screen shows a chart of how each payment splits between principal and interest over time.</p>
+
+      <h2 id="reminders">Reminders without a server</h2>
+      <p>There is no push server, so every reminder is a local notification that the operating system schedules:</p>
+      <ul>
+        <li>A <strong>daily check-in</strong> at a time you choose (8 PM by default), to log anything you missed.</li>
+        <li><strong>Bill reminders</strong> for recurring expenses: 3 days before and 1 day before at 9 AM, and at 8 AM on the day.</li>
+        <li><strong>Overspend alerts</strong> at 80% and 100% of a category limit.</li>
+      </ul>
+      <p><code>ReminderPlanner</code> is pure Dart: it takes transactions and the current time and returns a list of reminders. If all three reminders for the next bill are already in the past (for example, it is due today and it's after 8 AM), it plans the next occurrence instead. Each notification id comes from an FNV-1a hash of the transaction id plus the offset, so rescheduling a bill replaces its old reminders and doesn't create duplicates.</p>
+      <p><code>ReminderCoordinator</code> watches the repositories and updates the scheduled notifications whenever you add, edit or delete a recurring bill. The screens never need to call it.</p>
+
+      <h2 id="privacy">Your data rights: export and wipe</h2>
+      <p>Pocketly follows the main ideas of GDPR, CCPA and GLBA. You can get your data out and you can delete it, both from <strong>Settings → Privacy &amp; data</strong>:</p>
+      <ul>
+        <li><strong>Export</strong> everything as JSON, or your transactions as CSV. The CSV export protects against formula injection: a note that starts with <code>=</code>, <code>+</code>, <code>-</code> or <code>@</code> gets a leading apostrophe, so a spreadsheet won't run it as a formula.</li>
+        <li><strong>Absolute Wipe Out</strong> deletes everything, in a deliberate order.</li>
+      </ul>
+      <pre><code>Future&lt;void&gt; wipeEverything() async {
+  // Cancel OS-level reminders first so nothing fires after the data is gone,
+  // then destroy the data, then the key that protected it.
+  await notifications.cancelAll();
+  await database.destroy();
+  await pinService.clear();
+  await keyProvider.destroyKey();
+  await _purgeExports();
+}</code></pre>
+      <p>After a wipe, the app rebuilds its whole dependency graph from <code>injection.dart</code> and starts again from onboarding, as if it had just been installed.</p>
+
+      <h2 id="banksync">Bank sync, switched off on purpose</h2>
+      <p>Automatic bank import would be useful, but it means your transactions pass through an aggregator such as Plaid. I designed for it without turning it on. A <code>BankSyncRepository</code> interface and a <code>MockBankSyncImplementation</code> exist, behind a compile-time flag:</p>
+      <pre><code>static const bool isBankSyncEnabled = bool.fromEnvironment(
+  'POCKETLY_BANK_SYNC',
+  defaultValue: false,
+);</code></pre>
+      <p>While the flag is off, the repository refuses every call and the UI shows a "Future Release" screen. Because it is a compile-time constant, a normal build doesn't run any of that code.</p>
+
+      <h2 id="lessons">What I learned</h2>
+      <div class="blog-cards">
+        <div><span class="num">72</span><strong>Tests</strong>Engines, PIN security, repositories, cubits and complete app flows, all running without a device.</div>
+        <div><span class="num">1</span><strong>Spec, written first</strong>I wrote the whole app as a detailed spec before writing code. It's in the repo as <code>Agent.md</code>.</div>
+        <div><span class="num">0</span><strong>Floats in the ledger</strong>Floating point is used only for input, display and interest maths.</div>
+      </div>
+      <ul>
+        <li><strong>Keep the maths in pure classes.</strong> The allocation, amortization, budget and reminder engines have no Flutter imports. They were the easiest code to test and the easiest to change.</li>
+        <li><strong>Put side effects in one use case.</strong> Saving a transaction can fund goals and trigger alerts. Doing that in <code>RecordTransaction</code>, and not spread across screens, meant there was one place to test it.</li>
+        <li><strong>Check that your database library is maintained.</strong> I picked Isar first and had to switch when its code generator wouldn't build.</li>
+        <li><strong>Privacy covers more than storage.</strong> Encrypting the database was the easy part. I also had to think about app switcher snapshots, lock screen notifications, cloud backups, exported files left on disk, and dialogs open above the lock screen.</li>
+        <li><strong>A watched Hive stream can hang <code>Cubit.close()</code>.</strong> Cancelling an <code>await for</code> over <code>box.watch()</code> never completed. I replaced the <code>async*</code> generator with a manual <code>StreamController</code> that doesn't await the cancel.</li>
+      </ul>
+
+      <h2 id="run">Run it yourself</h2>
+      <p>You need Flutter, plus Xcode and CocoaPods for iOS or the Android SDK (compileSdk 35+) for Android. The app supports iOS 15+ and Android 7.0+.</p>
+      <pre><code>git clone https://github.com/didulantha97/Pocketly.git
+cd Pocketly
+flutter pub get
+flutter test      # 72 tests
+flutter analyze
+flutter run       # on a device or simulator</code></pre>
+      <p>To try the mock bank sync:</p>
+      <pre><code>flutter run --dart-define=POCKETLY_BANK_SYNC=true</code></pre>
+      <ul class="blog-checklist">
+        <li>Run it on a real phone to try Face ID or fingerprint unlock. Simulators can only fake it.</li>
+        <li>Allow notifications on first launch, or the reminders can't be scheduled.</li>
+        <li>Enter exchange rates in Settings if you log in more than one currency.</li>
+        <li>Export to JSON before you try Absolute Wipe Out. It really does delete everything.</li>
+      </ul>
+
+      <h2 id="conclusion">Conclusion</h2>
+      <p>A finance app doesn't need a backend to be useful. Pocketly handles logging, budgeting, goals, loans and reminders on the phone, and keeps all of it encrypted with a key that never leaves the device. Most of the work wasn't in the features. It was in the details around them: exact money, a PIN that is hard to brute force, a blur over the app switcher, and a wipe that removes the key as well as the data.</p>
+      <blockquote>The safest place to keep your financial data is a place that never receives it.</blockquote>
+
+      <p class="blog-note-small">Written October 2026, based on Pocketly 1.0.0. The code is MIT licensed. Issues and pull requests are welcome.</p>
+      <ul class="blog-sources">
+        <li><a href="https://github.com/didulantha97/Pocketly" target="_blank" rel="noopener">Pocketly on GitHub</a></li>
+        <li><a href="https://pub.dev/packages/hive_ce" target="_blank" rel="noopener">Hive CE on pub.dev</a></li>
+        <li><a href="https://pub.dev/packages/local_auth" target="_blank" rel="noopener">local_auth on pub.dev</a></li>
+        <li><a href="https://pub.dev/packages/flutter_local_notifications" target="_blank" rel="noopener">flutter_local_notifications on pub.dev</a></li>
+        <li><a href="https://datatracker.ietf.org/doc/html/rfc8018" target="_blank" rel="noopener">RFC 8018: PBKDF2</a></li>
+      </ul>
+    `
+  },
+  {
     slug: 'self-hosted-n8n-ai-product-assistant',
     title: 'Self-Hosting n8n from GitHub: Building an AI Product Assistant with Google Sheets and Gmail Alerts',
     date: '2026-09-30',
