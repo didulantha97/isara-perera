@@ -16,6 +16,709 @@
    ============================================================ */
 window.BLOG_POSTS = [
   {
+    slug: 'software-integration-end-to-end-guide',
+    title: 'Software Integration, End to End: An Interactive Guide for Architects and Developers',
+    date: '2026-10-11',
+    tags: ['Integration', 'Architecture', 'API Design', 'Event-Driven', 'Tools'],
+    summary: 'Everything I check before an integration goes live: patterns, contracts, security, idempotency, outbox and sagas, observability, capacity and governance. Includes an 18-lesson learning path, a pattern explorer, a decision helper, a backlog calculator, a quiz and a go-live checklist you can use right on the page.',
+    body: `
+      <p class="blog-lead">Integration is not "connecting two endpoints". It is keeping <strong>business meaning, security, correctness and reliability intact while data and control cross a system boundary</strong>. "Our API returned 200" doesn't prove the order reached the warehouse. This guide covers what I look at on every integration, from the first API call to running it in production. It also has interactive parts, so you can learn by doing: a learning path, a pattern explorer, a decision helper, a capacity calculator, a quiz and a go-live checklist.</p>
+      <div class="blog-equation">Business outcome → explicit contract → right pattern → safe retries → observable end to end → operable by someone on call</div>
+
+      <div class="blog-callout tip"><strong>New to integration?</strong> Start with the <a href="#path">learning path</a>: 18 short lessons that each link to the deeper section below. <strong>Designing one right now?</strong> Jump to the <a href="#decide">decision helper</a> and the <a href="#checklist">go-live checklist</a>.</div>
+
+      <nav class="blog-toc" aria-label="Contents">
+        <strong>Contents</strong>
+        <ol>
+          <li><a href="#what">Seven ideas that shape everything</a></li>
+          <li><a href="#path">Learning path (interactive)</a></li>
+          <li><a href="#charter">Start with an integration charter</a></li>
+          <li><a href="#patterns">Integration patterns</a></li>
+          <li><a href="#platforms">Middleware and platforms</a></li>
+          <li><a href="#protocols">Protocols and formats</a></li>
+          <li><a href="#contracts">Contracts and schema evolution</a></li>
+          <li><a href="#data">Data integration: ETL, ELT and CDC</a></li>
+          <li><a href="#security">Security and identity</a></li>
+          <li><a href="#reliability">Reliability: idempotency, retries, outbox, sagas</a></li>
+          <li><a href="#testing">Testing and CI/CD</a></li>
+          <li><a href="#operations">Observability, SLOs and runbooks</a></li>
+          <li><a href="#capacity">Performance and capacity</a></li>
+          <li><a href="#governance">Governance, versioning, migration and cost</a></li>
+          <li><a href="#decide">Decision framework</a></li>
+          <li><a href="#roadmap">Learning roadmaps</a></li>
+          <li><a href="#quiz">Knowledge check</a></li>
+          <li><a href="#checklist">Go-live checklist</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="what">Seven ideas that shape everything</h2>
+      <p>Before any tool or diagram, these are the ideas I keep coming back to. Every later section builds on one of them.</p>
+      <div class="blog-cards">
+        <div><span class="num">1</span><strong>No best style</strong>APIs, queues, pub/sub, streams, ETL and CDC each solve a different problem. Choose by the interaction, not by habit.</div>
+        <div><span class="num">2</span><strong>Logic before products</strong>"Use Kafka" or "use MuleSoft" is not a strategy. Settle latency, consistency, volume, security and recovery first.</div>
+        <div><span class="num">3</span><strong>Design delivery semantics</strong>Networks time out and brokers redeliver. Plan idempotency, retries, DLQs and reconciliation up front.</div>
+        <div><span class="num">4</span><strong>Contracts are assets</strong>Version and test API, event and data schemas like code. Producers and consumers must upgrade independently.</div>
+        <div><span class="num">5</span><strong>Identity at every hop</strong>Authentication and authorization have to survive gateways, queues and middleware, not stop at the edge.</div>
+        <div><span class="num">6</span><strong>Observability is in scope</strong>Trace IDs, metrics and end-to-end SLOs are part of the deliverable, not an ops backlog item.</div>
+        <div><span class="num">7</span><strong>Own it end to end</strong>Success means the business outcome happened downstream, with the right meaning, not that your call returned 200.</div>
+      </div>
+      <p>In practice that becomes a handful of working rules:</p>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Principle</th><th>What it means in the work</th></tr></thead>
+          <tbody>
+            <tr><td>Start from business outcomes</td><td>Agree scope, ownership, meaning and acceptance criteria before picking technology.</td></tr>
+            <tr><td>Prefer explicit contracts</td><td>Keep API, message and data schemas in source control with tests.</td></tr>
+            <tr><td>Minimise coupling</td><td>Go asynchronous when nobody needs the answer right now.</td></tr>
+            <tr><td>Assume partial failure</td><td>Bounded, safe retries; idempotency, DLQs, compensation and reconciliation.</td></tr>
+            <tr><td>Separate commands from facts</td><td>A command asks one capability to act. An event says something already happened.</td></tr>
+            <tr><td>Own data deliberately</td><td>One clear system of record per field; no uncontrolled two-way sync.</td></tr>
+            <tr><td>Secure each trust boundary</td><td>Authn, authz, least privilege, TLS and data minimisation follow the data.</td></tr>
+            <tr><td>Observe business flows</td><td>Propagate trace context and measure outcomes, not just component health.</td></tr>
+            <tr><td>Make evolution routine</td><td>Backward compatibility and deprecation are normal delivery work.</td></tr>
+            <tr><td>Optimise after measuring</td><td>Capacity, latency and cost decisions follow real benchmarks.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="path">Learning path</h2>
+      <p>If you're learning this from scratch, work through these in order. Each lesson is a two-minute read with an example and the mistake to avoid, and links to the section of this article that goes deeper.</p>
+      <div data-il="path" id="learning-path"><p class="blog-note-small">The interactive learning path needs JavaScript.</p></div>
+
+      <h2 id="charter">Start with an integration charter</h2>
+      <p>Start with a short charter, not a technology diagram. It says why the systems are being connected, which business process crosses the boundary, which system owns each piece of data, how consistent the data must be, who is accountable when the flow breaks, and what "working" looks like.</p>
+      <p>I split scope five ways, because each one fails differently:</p>
+      <ul>
+        <li><strong>Business scope:</strong> the outcome. "When a paid order is accepted, fulfilment receives it within 60 seconds."</li>
+        <li><strong>Functional scope:</strong> the commands, queries, notifications, files and records that cross the boundary.</li>
+        <li><strong>Data scope:</strong> entities, fields, meaning, classification, lineage, system of record and retention.</li>
+        <li><strong>Non-functional scope:</strong> volume, latency, availability, durability, consistency, recovery, security and regulation.</li>
+        <li><strong>Operational scope:</strong> who deploys it, support hours, alerts, escalation, replay, reconciliation, DR and who pays.</li>
+      </ul>
+      <div class="blog-callout warning"><strong>Most integration failures are semantic.</strong> Two systems can exchange perfectly valid JSON while disagreeing on what "customer", "cancelled", "net amount" or "completed" means. Schema validation catches structure. Only people agreeing on definitions catches meaning.</div>
+      <h3>The charter questions</h3>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Question</th><th>Answer needed</th></tr></thead>
+          <tbody>
+            <tr><td>Business capability</td><td>What outcome does this integration enable?</td></tr>
+            <tr><td>Producer / consumer</td><td>Who owns the source, and who owns each downstream use?</td></tr>
+            <tr><td>Interaction</td><td>Query, command, notification, event, stream, batch or file?</td></tr>
+            <tr><td>System of record</td><td>Which system is authoritative for each entity and field?</td></tr>
+            <tr><td>Volume and payload</td><td>Average, peak, burst, growth; typical and maximum size; sensitive fields</td></tr>
+            <tr><td>Latency and consistency</td><td>Interactive, seconds, hours or daily? Strong, bounded staleness or eventual?</td></tr>
+            <tr><td>Ordering and delivery</td><td>Global, per key, or irrelevant? Can anything be lost? Are duplicates OK?</td></tr>
+            <tr><td>Replay and recovery</td><td>How far back must data be reproducible? RTO and RPO?</td></tr>
+            <tr><td>Failure handling</td><td>Retry, queue, DLQ, compensation or manual repair?</td></tr>
+            <tr><td>Security and compliance</td><td>Identities, scopes, trust boundaries, encryption; personal, payment or health data?</td></tr>
+            <tr><td>SLO and cost</td><td>What user-visible target applies, and what is the monthly cost envelope?</td></tr>
+            <tr><td>Lifecycle and operations</td><td>Versioning and retirement policy; owning team, dashboards, alerts, runbook</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Who owns what</h3>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Role</th><th>Integration responsibility</th></tr></thead>
+          <tbody>
+            <tr><td>Executive sponsor</td><td>Outcome, funding, organisational escalation</td></tr>
+            <tr><td>Product / process owner</td><td>Process meaning, priorities, acceptance criteria</td></tr>
+            <tr><td>Enterprise / solution architect</td><td>Capability boundaries, strategic fit, cross-domain constraints</td></tr>
+            <tr><td>Integration architect</td><td>Patterns, contracts, platform choice, resilience, topology</td></tr>
+            <tr><td>Domain / system owner</td><td>Source and target behaviour, system-of-record decisions</td></tr>
+            <tr><td>Data architect / steward</td><td>Canonical definitions, mapping, quality, lineage, master data</td></tr>
+            <tr><td>Security / IAM</td><td>Authn, authz, secrets, certificates, threat model</td></tr>
+            <tr><td>Privacy / legal</td><td>Purpose, minimisation, retention, cross-border rules</td></tr>
+            <tr><td>Platform team</td><td>Gateway, broker, runtime, networking, IaC</td></tr>
+            <tr><td>Developer</td><td>Contract implementation, mapping, error handling, tests, telemetry</td></tr>
+            <tr><td>QA</td><td>Contract, integration, failure, performance and end-to-end tests</td></tr>
+            <tr><td>SRE / operations</td><td>SLOs, alerting, capacity, runbooks, incidents, postmortems</td></tr>
+            <tr><td>Partner / vendor</td><td>Their side of the contract, connectivity, test windows, support</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>For regulated data, include someone who can decide legal scope. Developers shouldn't be left to guess what GDPR or PCI DSS requires.</p>
+      <h3>Lifecycle and the architecture gate</h3>
+      <p><strong>Discover → classify → design → contract → threat-model → prototype → implement → test → capacity-test → deploy → observe → operate → evolve → retire.</strong></p>
+      <p>Before implementation starts, I expect ten artefacts: a context and data-flow diagram, a decision record, the interface contract, a mapping spec, a threat model, an error and recovery model, SLOs and expected capacity, a test strategy, a deployment and rollback plan, and a runbook with a named owner. "Done" means <em>operable in production</em>, not "messages pass between test environments".</p>
+      <p>Two properties are worth deciding early:</p>
+      <ul>
+        <li><strong>Temporal coupling:</strong> must both sides be up at the same moment? A synchronous call says yes. A durable broker lets them run at different times.</li>
+        <li><strong>Semantic coupling:</strong> how much does the producer need to know about what consumers do? Pub/sub keeps that low, but moves the complexity into schema governance, eventual consistency and harder debugging.</li>
+      </ul>
+
+      <h2 id="patterns">Integration patterns</h2>
+      <p>Pattern names overlap. One system can use microservices, REST APIs, a gateway, Kafka, sagas and an iPaaS all at once. Treat them as tools for different problems, not as competing camps.</p>
+      <div data-il="patterns" id="pattern-explorer"><p class="blog-note-small">The interactive pattern explorer needs JavaScript.</p></div>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Style</th><th>Best fit</th><th>Main liability</th><th>Reconsider when</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Point-to-point</strong></td><td>A few stable integrations</td><td>Every link grows its own auth, mapping and retry logic</td><td>The number of integrations keeps growing</td></tr>
+            <tr><td><strong>Request-response API</strong></td><td>Queries and commands that need an answer now</td><td>Temporal coupling, cascading latency, ambiguous retries</td><td>The work can finish asynchronously</td></tr>
+            <tr><td><strong>API-led / layered APIs</strong></td><td>Reusable system and business capabilities</td><td>Extra layers and governance overhead</td><td>A layer adds no real abstraction</td></tr>
+            <tr><td><strong>ESB / central mediation</strong></td><td>Legacy estates needing transformation and protocol bridging</td><td>Central bottleneck, a "smart bus" nobody owns</td><td>Independent team ownership is the goal</td></tr>
+            <tr><td><strong>Microservices</strong></td><td>Independently evolving bounded capabilities</td><td>Distributed failure, consistency and testing overhead</td><td>Domain boundaries don't justify distribution</td></tr>
+            <tr><td><strong>Event-driven</strong></td><td>Reacting to business facts, variable load</td><td>Eventual consistency, ordering, debugging</td><td>The caller needs a definitive answer immediately</td></tr>
+            <tr><td><strong>Queue</strong></td><td>Distributing jobs to workers</td><td>Lag, redelivery, poison messages</td><td>Every subscriber needs its own copy</td></tr>
+            <tr><td><strong>Event stream</strong></td><td>Replay, state rebuild, high-rate pipelines</td><td>Partitioning, retention and schema engineering</td><td>A simple task queue would do</td></tr>
+            <tr><td><strong>Choreography</strong></td><td>Simple, decentralised multi-service flows</td><td>Flow is implicit; hard to see and test</td><td>Many branches, deadlines or compensations</td></tr>
+            <tr><td><strong>Orchestration</strong></td><td>Complex, long-running processes</td><td>A central workflow component to run</td><td>The process is trivial and naturally reactive</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>Point-to-point is not wrong.</strong> A direct HTTPS call between two stable systems is often the simplest correct design. The problem is uncontrolled growth. Add shared platforms when repeated problems justify them, not because "enterprise architecture needs a bus".</p>
+      <p><strong>Microservices don't remove integration, they multiply it.</strong> What used to be an in-process call and a local transaction becomes a network call with independent failure and eventual consistency.</p>
+      <p><strong>Events describe facts; commands ask for action.</strong> <code>OrderPaid</code> can trigger fulfilment, loyalty, analytics and email without the order service knowing any of them exist. <code>ReserveInventory</code> is a command to one specific capability.</p>
+      <p>A realistic enterprise ends up with a mix like this, and that's fine:</p>
+      <div class="blog-diagram">
+        <svg viewBox="10 20 1020 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hybrid architecture: channels call an API gateway, which routes to services. Services write to their database with an outbox and publish to a broker or event stream. Change data capture also feeds the stream from the database. The stream fans out to consumers such as fulfilment and notifications, to an iPaaS that connects SaaS, ERP and legacy systems, and to a lake or warehouse.">
+          <defs><marker id="il-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" class="head"/></marker></defs>
+          <rect x="20" y="40" rx="14" width="170" height="80" class="box"/>
+          <text x="105" y="75" text-anchor="middle" class="t">Channels</text>
+          <text x="105" y="100" text-anchor="middle" class="s">web · mobile · partners</text>
+          <rect x="230" y="40" rx="14" width="170" height="80" class="box hl"/>
+          <text x="315" y="75" text-anchor="middle" class="t">API gateway</text>
+          <text x="315" y="100" text-anchor="middle" class="s">auth · quotas · routing</text>
+          <rect x="440" y="40" rx="14" width="170" height="80" class="box"/>
+          <text x="525" y="75" text-anchor="middle" class="t">Services</text>
+          <text x="525" y="100" text-anchor="middle" class="s">order · customer</text>
+          <rect x="650" y="40" rx="14" width="170" height="80" class="box hl"/>
+          <text x="735" y="75" text-anchor="middle" class="t">Broker / stream</text>
+          <text x="735" y="100" text-anchor="middle" class="s">queues · topics · log</text>
+          <rect x="860" y="40" rx="14" width="160" height="80" class="box"/>
+          <text x="940" y="75" text-anchor="middle" class="t">Consumers</text>
+          <text x="940" y="100" text-anchor="middle" class="s">fulfil · notify</text>
+          <rect x="440" y="230" rx="14" width="170" height="80" class="box"/>
+          <text x="525" y="265" text-anchor="middle" class="t">Service DB</text>
+          <text x="525" y="290" text-anchor="middle" class="s">state + outbox</text>
+          <rect x="650" y="230" rx="14" width="170" height="80" class="box"/>
+          <text x="735" y="265" text-anchor="middle" class="t">iPaaS</text>
+          <text x="735" y="290" text-anchor="middle" class="s">SaaS · ERP · legacy</text>
+          <rect x="860" y="230" rx="14" width="160" height="80" class="box"/>
+          <text x="940" y="265" text-anchor="middle" class="t">Lake / DWH</text>
+          <text x="940" y="290" text-anchor="middle" class="s">analytics</text>
+          <line x1="190" y1="80" x2="228" y2="80" class="ln" marker-end="url(#il-arrow)"/>
+          <line x1="400" y1="80" x2="438" y2="80" class="ln" marker-end="url(#il-arrow)"/>
+          <line x1="610" y1="80" x2="648" y2="80" class="ln" marker-end="url(#il-arrow)"/>
+          <line x1="820" y1="80" x2="858" y2="80" class="ln" marker-end="url(#il-arrow)"/>
+          <line x1="525" y1="120" x2="525" y2="228" class="ln" marker-end="url(#il-arrow)"/>
+          <line x1="598" y1="230" x2="684" y2="124" class="ln" marker-end="url(#il-arrow)"/>
+          <text x="626" y="190" text-anchor="end" class="s">CDC</text>
+          <line x1="735" y1="120" x2="735" y2="228" class="ln" marker-end="url(#il-arrow)"/>
+          <line x1="805" y1="120" x2="895" y2="228" class="ln" marker-end="url(#il-arrow)"/>
+        </svg>
+      </div>
+      <p>Each piece does one job: the gateway governs incoming APIs, the broker carries async work and events, CDC carries database changes, the iPaaS mediates SaaS and legacy, and analytics consumes the stream. Platforms explicitly support mixing these rather than forcing everything into one messaging model.</p>
+
+      <h2 id="platforms">Middleware and platforms</h2>
+      <p>"Middleware" makes most sense when you split it by responsibility:</p>
+      <ul>
+        <li><strong>iPaaS:</strong> connectors, mappings, workflows, hybrid SaaS and application integration.</li>
+        <li><strong>ESB / integration runtime:</strong> mediation, transformation, routing, adapters.</li>
+        <li><strong>Message broker:</strong> durable async delivery through queues and topics.</li>
+        <li><strong>Event streaming platform:</strong> retained, partitioned logs and stream consumers.</li>
+        <li><strong>API gateway / API management:</strong> ingress policy, auth, rate limits, analytics, developer portal.</li>
+        <li><strong>Service mesh:</strong> east-west service traffic, mTLS identity and telemetry.</li>
+        <li><strong>ETL / ELT platform:</strong> bulk data movement and transformation.</li>
+        <li><strong>B2B gateway:</strong> partner onboarding, EDI and partner-specific transport.</li>
+      </ul>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Platform</th><th>Strongest at</th><th>Good fit</th><th>Trade-off to evaluate</th></tr></thead>
+          <tbody>
+            <tr><td><strong>MuleSoft Anypoint</strong></td><td>iPaaS, APIs, runtime, messaging, B2B, governance</td><td>Large, mixed enterprise estates</td><td>Breadth brings platform skills, licensing and lock-in</td></tr>
+            <tr><td><strong>Boomi</strong></td><td>iPaaS, SaaS and data integration, B2B/EDI, API management</td><td>SaaS-heavy, low-code delivery</td><td>Productivity vs platform-specific modelling and licensing</td></tr>
+            <tr><td><strong>IBM App Connect</strong></td><td>Hybrid integration, IBM MQ, Kafka, mainframe</td><td>IBM and legacy-heavy estates</td><td>Another control plane to run and govern</td></tr>
+            <tr><td><strong>Google Apigee / Application Integration</strong></td><td>API management plus workflows</td><td>API-centric and Google Cloud estates</td><td>Cloud affinity vs specialised API features</td></tr>
+            <tr><td><strong>Azure integration services</strong></td><td>Service Bus, Event Grid, Event Hubs, Logic Apps, Data Factory</td><td>Azure-centric estates</td><td>You must pick the right service for each semantic</td></tr>
+            <tr><td><strong>Apache Kafka</strong></td><td>Durable partitioned streaming</td><td>High throughput, replay, CDC backbone</td><td>Partitioning, retention, lag and schema need real engineering</td></tr>
+            <tr><td><strong>RabbitMQ</strong></td><td>General-purpose broker and routing</td><td>Work queues and app messaging</td><td>Not a drop-in for a retained event log</td></tr>
+            <tr><td><strong>Istio</strong></td><td>Service mesh</td><td>Large service estates needing central traffic and security policy</td><td>A network abstraction with real operational cost</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The right answer is usually a <strong>portfolio</strong>: a gateway for public APIs, a mesh inside Kubernetes, Kafka for retained domain events, a queue for commands and an iPaaS for SaaS and ERP. A gateway controls traffic coming <em>into</em> an API domain; a mesh controls traffic <em>between</em> workloads. They aren't substitutes.</p>
+
+      <h2 id="protocols">Protocols and formats</h2>
+      <p>"REST vs Kafka" is usually the wrong question. HTTP request-response and an event log solve different timing and ownership problems.</p>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Technology</th><th>Strengths</th><th>Watch for</th><th>Typical use</th></tr></thead>
+          <tbody>
+            <tr><td><strong>HTTP + REST</strong></td><td>Everywhere, caching and status semantics, readable JSON</td><td>Chatty APIs, temporal coupling, unsafe retries</td><td>Public and internal business APIs</td></tr>
+            <tr><td><strong>gRPC</strong></td><td>Typed Protobuf contracts, codegen, streaming</td><td>Browser support, harder manual debugging</td><td>Internal low-latency calls</td></tr>
+            <tr><td><strong>SOAP</strong></td><td>Formal XML contracts, WS-* ecosystem</td><td>Verbosity and complexity</td><td>Existing enterprise and vendor APIs</td></tr>
+            <tr><td><strong>GraphQL</strong></td><td>Client-chosen result shape, typed schema</td><td>Query cost, field-level authz, caching</td><td>Client-facing aggregation</td></tr>
+            <tr><td><strong>AMQP 1.0</strong></td><td>Standard broker protocol</td><td>Broker features still differ</td><td>Enterprise messaging clients</td></tr>
+            <tr><td><strong>MQTT 5</strong></td><td>Lightweight pub/sub for constrained devices</td><td>QoS, session and topic security design</td><td>IoT and edge</td></tr>
+            <tr><td><strong>Kafka protocol</strong></td><td>Throughput, retention, replay, offsets</td><td>Not a generic queue; ordering only per partition</td><td>Event streams, CDC, analytics</td></tr>
+            <tr><td><strong>JSON</strong></td><td>Universal, human-readable</td><td>Weak typing without a schema</td><td>APIs and light events</td></tr>
+            <tr><td><strong>XML</strong></td><td>Namespaces, mature schemas, signatures</td><td>Verbose; parser hardening needed</td><td>B2B, SOAP, document flows</td></tr>
+            <tr><td><strong>Avro</strong></td><td>Compact binary, reader/writer schema resolution</td><td>Needs a schema registry and discipline</td><td>Event and data pipelines</td></tr>
+            <tr><td><strong>Protobuf</strong></td><td>Compact, typed, generated code</td><td>Field numbers are the wire contract</td><td>gRPC and high-performance contracts</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>REST is an architectural style, not a protocol; "REST API" usually means resource-oriented HTTP (RFC 9110) with JSON (RFC 8259). OpenAPI 3.2 describes HTTP operations; GraphQL describes a typed graph that clients query. Think of Kafka as a retained distributed log, not "just a queue".</p>
+
+      <h2 id="contracts">Contracts and schema evolution</h2>
+      <p>A contract is more than field names. A complete one covers:</p>
+      <pre><code>Contract
+├── operation / event name and its business meaning
+├── owner
+├── schema, types, required vs optional fields
+├── identifiers and uniqueness
+├── units, time zone and precision
+├── validation rules and security classification
+├── ordering / partition key
+├── idempotency identity
+├── error semantics
+├── compatibility and deprecation policy
+└── SLO</code></pre>
+      <p>For events, keep a stable envelope separate from the business payload:</p>
+      <pre><code>{
+  "eventId": "01J9ZQ6V3K8D2W5X7Y4N1M0P9R",
+  "eventType": "com.example.order.paid",
+  "eventVersion": 3,
+  "occurredAt": "2026-10-11T10:15:30Z",
+  "producer": "order-service",
+  "subject": "order/84721",
+  "correlationId": "checkout-9182",
+  "causationId": "payment-551",
+  "data": {
+    "orderId": "84721",
+    "currency": "SEK",
+    "amount": "1295.00"
+  }
+}</code></pre>
+      <p>Identity, correlation and version live in the envelope; the domain lives in <code>data</code>. Don't copy every database column into the event just because it exists. Note the amount is a decimal string with an explicit currency, never a float.</p>
+      <h3>Evolving without lock-step deploys</h3>
+      <ul>
+        <li><strong>APIs:</strong> adding optional fields is easy for consumers; removing, renaming or changing meaning is not.</li>
+        <li><strong>Event streams</strong> are harder, because old records can be replayed months later. A schema registry can block incompatible schemas before they're published. <em>Backward</em> compatible means new consumers can read old data; <em>forward</em> means old consumers can read new data; <em>full</em> means both.</li>
+        <li><strong>Avro</strong> uses defaults and aliases with reader/writer resolution.</li>
+        <li><strong>Protobuf:</strong> never reuse a deleted field number. Mark it <code>reserved</code>.</li>
+      </ul>
+      <div class="blog-callout"><strong>The rule I enforce:</strong> an ordinary schema change must never require the producer and all consumers to deploy at the same time. If it does, the systems are tightly coupled, however asynchronous the transport is.</div>
+      <div class="blog-callout warning"><strong>Structurally compatible, semantically broken:</strong> v1 <code>amount</code> = gross including tax; v2 <code>amount</code> = net excluding tax. Every schema check passes and every invoice is wrong. Semantic compatibility needs a human owner.</div>
+
+      <h2 id="data">Data integration: ETL, ELT and CDC</h2>
+      <p><strong>ETL</strong> transforms before loading. <strong>ELT</strong> loads first and transforms with the destination's compute, which often simplifies the architecture.</p>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Requirement</th><th>Prefer</th></tr></thead>
+          <tbody>
+            <tr><td>Clean or mask sensitive data before it lands</td><td>ETL</td></tr>
+            <tr><td>Elastic warehouse / lakehouse transformation</td><td>ELT</td></tr>
+            <tr><td>Very large analytical datasets</td><td>Usually ELT</td></tr>
+            <tr><td>Operational, near-real-time propagation</td><td>CDC or events, not periodic bulk ETL</td></tr>
+            <tr><td>Historical bulk migration</td><td>Batch ETL / ELT</td></tr>
+            <tr><td>Pushing analytical results back into operational tools</td><td>Reverse ETL may fit</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>Change data capture</strong> reads changes incrementally from the database log instead of re-extracting tables. Debezium, for example, reads PostgreSQL logical replication and MySQL binlogs and publishes change events through Kafka Connect. It's great for migrations, cache and search indexing, analytics feeds and getting events out of legacy databases.</p>
+      <div class="blog-callout warning"><strong>A database change is not automatically a domain event.</strong> <code>UPDATE orders SET status='P'</code> describes storage; <code>OrderPaid</code> describes meaning. If many consumers read raw CDC, they are coupled to your table design. Map the change to an owned event unless row-level semantics really are what consumers need.</div>
+      <h3>Mapping specs: syntax and meaning</h3>
+      <pre><code>Source.customer_number
+  -> trim -> validate pattern
+  -> Target.customerId
+
+Source.country = "SE"
+  -> confirmed ISO 3166-1 alpha-2
+  -> Target.countryCode = "SE"
+
+Source.total_cents = 129500
+  -> decimal(source / 100)
+  -> Target.amount   = 1295.00
+  -> Target.currency = Source.currency</code></pre>
+      <p>Every non-trivial mapping should state how it handles nulls, defaults, enums, units, precision, character encoding, dates and time zones, identifier matching, duplicates and invalid values.</p>
+      <p><strong>Master data management</strong> matters when several systems share customers, products, suppliers or locations. The key question is not where the golden record runs, but who is authoritative for each attribute, how identities are matched and how conflicts are resolved. MDM is not a licence for uncontrolled two-way sync.</p>
+
+      <h2 id="security">Security and identity</h2>
+      <p>Apply security in layers that follow the data:</p>
+      <div class="blog-equation">Identity → authentication → authorization → transport security → payload protection → secrets and keys → audit → retention and deletion</div>
+      <p><strong>Authentication</strong> asks who the principal is; <strong>authorization</strong> asks what it may do. OAuth 2.0 is an authorization framework. OpenID Connect adds authentication and identity claims on top of it.</p>
+      <p>Work from <strong>RFC 9700</strong> (January 2025), the current OAuth security best practice, not just the 2012 OAuth RFC. It requires PKCE for public authorization-code clients, recommends it for confidential clients, requires exact redirect-URI matching and deprecates weaker flows such as the implicit grant and password grant.</p>
+      <p>For machine-to-machine integrations, the usual choices are:</p>
+      <ul>
+        <li>OAuth client credentials with narrow scopes.</li>
+        <li>Workload identities supplied by the runtime (managed identity, workload identity federation).</li>
+        <li>Mutual TLS when both sides must authenticate with certificates.</li>
+        <li>Certificate-bound access tokens (RFC 8705), so a stolen token is useless on its own.</li>
+      </ul>
+      <p>TLS 1.3 protects data in transit; encryption at rest protects stored data; field-level encryption helps when middleware shouldn't see a sensitive value at all.</p>
+      <ul>
+        <li><strong>GDPR:</strong> treat minimisation, purpose, retention and access control as design decisions. Don't copy every source field into every downstream system.</li>
+        <li><strong>PCI DSS:</strong> every integration that touches card data expands what must be protected and audited. Keep card data out of flows that don't need it.</li>
+      </ul>
+      <p>The general rule: <strong>classify the data before choosing the integration path</strong>, and bring in compliance owners when sector rules apply.</p>
+
+      <h2 id="reliability">Reliability: idempotency, retries, outbox, sagas</h2>
+      <div class="blog-callout"><strong>The central model:</strong> every remote call can fail before it runs, while it runs, or <em>after it succeeded but before the caller heard back</em>. That last case is why "just retry" creates duplicate orders, payments and emails.</div>
+      <h3>Idempotency</h3>
+      <p>An operation is idempotent when doing it twice leaves the system in the same state as doing it once. For APIs, use a client-generated idempotency key:</p>
+      <pre><code>POST /payments
+Idempotency-Key: checkout-7291-payment
+
+handle(request):
+    existing = idempotencyStore.get(request.key)
+    if existing:
+        return existing.previousResponse
+
+    begin transaction
+        payment  = createPaymentIfAbsent(businessKey = request.key,
+                                         amount      = request.amount)
+        response = toResponse(payment)
+        idempotencyStore.save(request.key, response)
+    commit
+    return response</code></pre>
+      <p>Commit the business change and the idempotency record together, or the dedupe itself can race with a crash. For messages, record the event ID in the same transaction:</p>
+      <pre><code>consume(event):
+    begin transaction
+        if processedEvents.exists(event.eventId):
+            commit; ack(event); return
+        applyBusinessChange(event)
+        processedEvents.insert(event.eventId)
+    commit
+    ack(event)</code></pre>
+      <p>Even brokers with duplicate detection can redeliver. Azure Service Bus documentation still recommends idempotent consumers.</p>
+      <h3>Retries and backoff</h3>
+      <p>Retry <strong>transient</strong> faults, never deterministic business errors. Cap both the attempts and the total deadline:</p>
+      <pre><code>for attempt in 1..MAX_ATTEMPTS:
+    try:
+        return callDownstream(timeout = attemptTimeout)
+    catch TransientError:
+        if attempt == MAX_ATTEMPTS: raise
+        sleep(random(0, min(MAX_DELAY, BASE_DELAY * 2^attempt)))   # full jitter</code></pre>
+      <p>Jitter stops thousands of clients retrying in sync. Design timeouts, retry limits and concurrency limits together, or retries during an overload become a retry storm.</p>
+      <h3>Dead-letter queues</h3>
+      <p>A DLQ is not a graveyard. Each message needs the failure reason, the original payload or a reference, correlation and trace IDs, attempt count and timestamps. The DLQ itself needs a documented reprocessing procedure, access control, alerts on meaningful thresholds and a retention policy.</p>
+      <h3>The transactional outbox</h3>
+      <p>The classic bug: insert the order, commit, then publish <code>OrderCreated</code>, and the process crashes between the commit and the publish. The order exists; the event never does. The fix is to write the event in the same transaction:</p>
+      <pre><code>BEGIN;
+  INSERT INTO orders (...) VALUES (...);
+  INSERT INTO outbox (event_id, event_type, aggregate_id, payload)
+  VALUES (:event_id, 'OrderCreated', :order_id, :payload);
+COMMIT;
+-- a separate relay (or CDC on the outbox table) publishes committed rows</code></pre>
+      <p>The relay can still publish a row twice, so consumers stay idempotent. Outbox plus idempotent consumer is the pair that fixes dual writes.</p>
+      <h3>Sagas</h3>
+      <p>Across independently owned services, a <strong>saga</strong> runs a business transaction as a series of local transactions, with compensating actions when a step fails. Sagas don't give ACID isolation, so other readers can see intermediate states.</p>
+      <div class="blog-diagram">
+        <svg viewBox="10 20 1010 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Orchestrated order saga: the Order API, called with an idempotency key, writes the order and an outbox row in one commit. A publisher relays OrderCreated to the broker. The saga orchestrator then asks Payment to authorize, Inventory to reserve, and Fulfilment to create, ending in OrderConfirmed. If inventory is out of stock, the saga voids or refunds the payment and the order is cancelled.">
+          <defs><marker id="il-arrow2" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" class="head"/></marker></defs>
+          <rect x="20" y="40" rx="14" width="200" height="80" class="box"/>
+          <text x="120" y="75" text-anchor="middle" class="t">Order API</text>
+          <text x="120" y="100" text-anchor="middle" class="s">idempotency key</text>
+          <rect x="280" y="40" rx="14" width="200" height="80" class="box hl"/>
+          <text x="380" y="75" text-anchor="middle" class="t">Order DB</text>
+          <text x="380" y="100" text-anchor="middle" class="s">order + outbox, 1 commit</text>
+          <rect x="540" y="40" rx="14" width="200" height="80" class="box"/>
+          <text x="640" y="75" text-anchor="middle" class="t">Outbox relay</text>
+          <text x="640" y="100" text-anchor="middle" class="s">or CDC</text>
+          <rect x="800" y="40" rx="14" width="200" height="80" class="box"/>
+          <text x="900" y="75" text-anchor="middle" class="t">Broker</text>
+          <text x="900" y="100" text-anchor="middle" class="s">OrderCreated</text>
+          <rect x="20" y="210" rx="14" width="200" height="80" class="box hl"/>
+          <text x="120" y="245" text-anchor="middle" class="t">Order saga</text>
+          <text x="120" y="270" text-anchor="middle" class="s">orchestrator</text>
+          <rect x="280" y="210" rx="14" width="200" height="80" class="box"/>
+          <text x="380" y="245" text-anchor="middle" class="t">Payment</text>
+          <text x="380" y="270" text-anchor="middle" class="s">authorize</text>
+          <rect x="540" y="210" rx="14" width="200" height="80" class="box"/>
+          <text x="640" y="245" text-anchor="middle" class="t">Inventory</text>
+          <text x="640" y="270" text-anchor="middle" class="s">reserve</text>
+          <rect x="800" y="210" rx="14" width="200" height="80" class="box"/>
+          <text x="900" y="245" text-anchor="middle" class="t">Fulfilment</text>
+          <text x="900" y="270" text-anchor="middle" class="s">→ OrderConfirmed</text>
+          <rect x="280" y="380" rx="14" width="200" height="80" class="box"/>
+          <text x="380" y="415" text-anchor="middle" class="t">Payment</text>
+          <text x="380" y="440" text-anchor="middle" class="s">void / refund</text>
+          <rect x="20" y="380" rx="14" width="200" height="80" class="box"/>
+          <text x="120" y="415" text-anchor="middle" class="t">Order</text>
+          <text x="120" y="440" text-anchor="middle" class="s">OrderCancelled</text>
+          <line x1="220" y1="80" x2="278" y2="80" class="ln" marker-end="url(#il-arrow2)"/>
+          <line x1="480" y1="80" x2="538" y2="80" class="ln" marker-end="url(#il-arrow2)"/>
+          <line x1="740" y1="80" x2="798" y2="80" class="ln" marker-end="url(#il-arrow2)"/>
+          <path d="M900,120 V165 H120 V208" fill="none" class="ln" marker-end="url(#il-arrow2)"/>
+          <line x1="220" y1="250" x2="278" y2="250" class="ln" marker-end="url(#il-arrow2)"/>
+          <line x1="480" y1="250" x2="538" y2="250" class="ln" marker-end="url(#il-arrow2)"/>
+          <line x1="740" y1="250" x2="798" y2="250" class="ln" marker-end="url(#il-arrow2)"/>
+          <path d="M640,290 V420 H482" fill="none" class="ln" marker-end="url(#il-arrow2)"/>
+          <text x="652" y="360" class="s">out of stock</text>
+          <line x1="280" y1="420" x2="222" y2="420" class="ln" marker-end="url(#il-arrow2)"/>
+        </svg>
+      </div>
+      <p>Every handler in that flow still needs idempotency because messages can be redelivered. Treat compensation as a real business operation ("refund the payment"), not as pretending the first step never happened.</p>
+      <div class="blog-callout"><strong>"Exactly once" needs a boundary.</strong> Kafka offers exactly-once processing within Kafka. It does not make your payment provider, external database or email service part of the same transaction. When someone says "exactly once", ask "between what and what?"</div>
+
+      <h2 id="testing">Testing and CI/CD</h2>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Test type</th><th>Finds</th><th>Runs</th><th>Weakness</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Unit</strong></td><td>Mapping logic, validation, edge cases</td><td>Every build</td><td>No real protocol behaviour</td></tr>
+            <tr><td><strong>Component</strong></td><td>Serialization, persistence, adapters</td><td>Every build</td><td>External systems still simulated</td></tr>
+            <tr><td><strong>Contract</strong></td><td>Broken API and message assumptions</td><td>Every contract change</td><td>Doesn't prove network or config</td></tr>
+            <tr><td><strong>Integration</strong></td><td>Auth, serialization, routing, config on real brokers and DBs</td><td>CI / staging</td><td>Slower, environment-dependent</td></tr>
+            <tr><td><strong>End-to-end</strong></td><td>Cross-system behaviour and meaning</td><td>Critical scenarios only</td><td>Slow and brittle if overused</td></tr>
+            <tr><td><strong>Load</strong></td><td>Capacity limits, tail latency, backpressure</td><td>Before major releases</td><td>Worthless with unrealistic workload</td></tr>
+            <tr><td><strong>Chaos</strong></td><td>Hidden coupling, retry storms, bad failover</td><td>Mature pre-prod or prod with controls</td><td>Needs strict blast-radius discipline</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Consumer-driven contract testing with a tool like <a href="https://docs.pact.io/" target="_blank" rel="noopener">Pact</a> checks compatibility without needing every service in one environment. Chaos engineering is a disciplined experiment, not random destruction: define a measurable steady state, form a hypothesis, inject a realistic failure, and keep the blast radius small.</p>
+      <p>A pipeline I'd be happy with:</p>
+      <pre><code>contract / schema lint
+  → unit + mapping tests
+  → component tests
+  → consumer / provider contract verification
+  → integration tests with real broker, DB and gateway
+  → security and policy checks
+  → performance / resilience tests (where it matters)
+  → deploy candidate → smoke / synthetic transaction
+  → canary or progressive rollout
+  → SLO and telemetry evaluation
+  → promote or roll back</code></pre>
+      <p>Schema compatibility belongs in CI as a gate, not in production as a surprise.</p>
+
+      <h2 id="operations">Observability, SLOs and runbooks</h2>
+      <p>Every important transaction carries a correlation or trace ID across synchronous <em>and</em> asynchronous hops. At a minimum, capture:</p>
+      <ul>
+        <li><strong>Metrics:</strong> request or event rate, error ratio, duration, queue depth, consumer lag, retries, DLQ count, payload size, connection saturation.</li>
+        <li><strong>Traces:</strong> gateway, service, broker and consumer spans with end-to-end causality.</li>
+        <li><strong>Logs:</strong> structured, with trace ID, correlation ID, service version, outcome and business identifiers, and without secrets or unneeded personal data.</li>
+      </ul>
+      <p><a href="https://opentelemetry.io/docs/" target="_blank" rel="noopener">OpenTelemetry</a> gives you vendor-neutral traces, metrics and logs, and carries trace IDs into logs so you can join them. Keep high-cardinality values such as order IDs in logs and traces, not as metric labels.</p>
+      <h3>SLIs, SLOs and SLAs</h3>
+      <p>An <strong>SLI</strong> is the measurement, an <strong>SLO</strong> is the target, and an <strong>SLA</strong> is the agreement with consequences. For integrations, the useful SLOs are end to end:</p>
+      <pre><code>Availability:   99.95% of valid CreateOrder requests accepted (rolling 30 days)
+Propagation:    99% of accepted orders visible to fulfilment within 60 s
+Correctness:    99.999% of settled records reconcile without manual correction
+Event pipeline: 99% of OrderPaid events processed within 30 s of publication</code></pre>
+      <p>Use percentiles (p95, p99), not averages, because averages hide the slow tail users actually feel. An SLO below 100% gives you an error budget to balance release speed against reliability work. 100% targets force needlessly expensive designs.</p>
+      <h3>Runbooks and incidents</h3>
+      <p>Every critical integration gets a runbook that answers: business and technical owner, on-call, upstream and downstream systems, dashboards, SLO, normal traffic baseline, known failure modes, retry policy, DLQ, replay and reconciliation procedure, certificate and token renewal, kill switches, how to pause consumers and drain backlog, rollback, escalation and vendor contacts.</p>
+      <p>Incidents run <strong>detect → contain → diagnose → recover → reconcile</strong>. "Service recovered" isn't "business state recovered": the broker may be back while a backlog remains, the bug may be fixed while thousands of messages sit in a DLQ, and a timeout may have created duplicates downstream. Reconciliation is part of recovery.</p>
+
+      <h2 id="capacity">Performance and capacity</h2>
+      <p>Describe each interface with a workload shape, not one throughput number: average, peak and burst rate; typical, p95 and maximum payload; p50, p95 and p99 latency; concurrency; partition key distribution; daily volume; retention; growth; and how fast you must recover a backlog.</p>
+      <p>Two calculations do most of the work. First, Little's law: concurrency ≈ arrival rate × service time, so 2,000 events/s at 40 ms each needs about 80 concurrent handlers. Second, the <strong>catch-up rate</strong>: after a 30-minute outage at 10,000 events/s you have 18 million queued events, and consumers that handle 15,000/s drain them at only 5,000/s net, which takes an hour. Try your own numbers:</p>
+      <div data-il="capacity" id="capacity-calculator"><p class="blog-note-small">The capacity calculator needs JavaScript.</p></div>
+      <p>A platform sized for exactly the average load never catches up after an outage. In a partitioned stream, a skewed key can also create one hot partition while the cluster looks idle. Load tests should cover realistic payloads, bursts, slow downstreams, timeouts, retries, large messages, backlog recovery, skewed keys, connection exhaustion, cold starts and the cost of observability itself.</p>
+      <h3>Backpressure</h3>
+      <p>When arrivals outpace processing, choose a response on purpose: buffer in a queue, slow the producer with flow control, reject with 429, shed optional work, scale consumers, or prioritise critical traffic. Infinite buffering is not a strategy. A queue turns overload into stored work, and you still need the storage, an acceptable lag and a drain rate.</p>
+
+      <h2 id="governance">Governance, versioning, migration and cost</h2>
+      <h3>Governance that helps</h3>
+      <p>Good governance makes the right thing easy and automatic instead of adding a review queue for every endpoint: <strong>propose → design contract → automated lint and policy checks → security review proportional to risk → implement → publish to the catalog → operate against the SLO → evolve compatibly → deprecate with telemetry → retire</strong>.</p>
+      <p>Govern centrally: naming, auth choices, error model, pagination, idempotency expectations, event envelope, trace propagation, schema compatibility, data classification, minimum telemetry, ownership metadata and the deprecation policy. Leave the business meaning of each API and event with the team that owns the domain.</p>
+      <h3>Versioning</h3>
+      <p>Version because <strong>consumer compatibility changes</strong>, not because you refactored. The preferred order: compatible additive change → deprecate while old and new coexist → explicit breaking version → migration period → retire once telemetry shows nobody calls the old one.</p>
+      <h3>Developer experience</h3>
+      <p>A catalog entry should give purpose, owner, lifecycle state, auth, schema, examples, error semantics, rate limits, idempotency behaviour, SLO, data classification, changelog, deprecation notices, sandbox data and status. OpenAPI and Protobuf can drive docs, mocks, linting and client generation. SDKs help when they hide real complexity (auth, paging, retries, telemetry), but every SDK is another product to version. For a simple API, a great OpenAPI file and good examples often beat six SDKs.</p>
+      <h3>Migrating from legacy</h3>
+      <p>Modernisation is not "rewrite everything and cut over on Friday". The <a href="https://martinfowler.com/bliki/StranglerFigApplication.html" target="_blank" rel="noopener">Strangler Fig</a> approach routes capabilities from the old system to the new one gradually, behind a facade:</p>
+      <ol>
+        <li><strong>Inventory</strong> real interfaces, consumers, hidden batch jobs, DB readers, files and partner links.</li>
+        <li><strong>Characterise</strong> volumes, error rates and current behaviour before changing anything.</li>
+        <li><strong>Add a facade</strong> (gateway, adapter or integration layer) so consumers don't have to move twice.</li>
+        <li><strong>Establish contracts and telemetry</strong> so you can compare before and after.</li>
+        <li><strong>Move one bounded capability</strong> at a time.</li>
+        <li><strong>Sync only what coexistence needs</strong>, using CDC where it helps.</li>
+        <li><strong>Shadow-run</strong> where risk justifies it, comparing outputs without switching the system of record.</li>
+        <li><strong>Reconcile</strong> business-level differences, <strong>cut over gradually</strong> and <strong>keep rollback</strong>.</li>
+        <li><strong>Remove</strong> the old sync paths and <strong>retire</strong> the old capability.</li>
+      </ol>
+      <div class="blog-callout warning"><strong>Avoid permanent dual writes.</strong> An application that writes to the legacy DB and the new DB separately will drift the first time one write fails. Keep one authoritative write path and replicate from it.</div>
+      <h3>Cost</h3>
+      <p>Model cost per business transaction, not as a pile of invoices:</p>
+      <div class="blog-equation">Cost per transaction = API + compute + messaging + data movement + storage + observability + platform licensing + operations</div>
+      <p>Monthly cost is then transactions × cost per transaction + fixed platform cost. For iPaaS, check how connectors, runtimes, environments and message volume are priced, because the pricing unit shapes your architecture. Watch telemetry in particular: 10,000 events/s × 3 log lines × 1 KB is about 30 MB/s, or roughly 2.6 TB a day before indexing. Sampling, aggregation, retention tiers and dropping pointless success logs matter. Pair cost with SLOs too: 99.99999% and 5 ms isn't "better" if the business needs 99.9% and 500 ms.</p>
+
+      <h2 id="decide">Decision framework</h2>
+      <p>Separate <strong>hard constraints</strong> (must have), <strong>quality attributes</strong> (how well) and <strong>preferences</strong> (nice to have). Then start from the interaction:</p>
+      <pre><code>Does the caller need the result now?
+├─ Yes
+│  ├─ public / general interoperability    → HTTP API
+│  └─ typed internal RPC, high throughput  → consider gRPC
+└─ No
+   ├─ exactly one worker should do it      → queue / competing consumers
+   ├─ several capabilities react to a fact → pub/sub event
+   ├─ need history, replay, analytics      → durable event stream
+   └─ bulk analytical movement             → ETL / ELT
+
+Does the process span systems that commit separately?
+├─ No  → local transaction (+ outbox if you publish)
+└─ Yes
+   ├─ simple, naturally reactive           → choreography may fit
+   └─ branches, timeouts, compensation     → orchestration is clearer</code></pre>
+      <div data-il="decision" id="decision-helper"><p class="blog-note-small">The decision helper needs JavaScript.</p></div>
+      <h3>Then choose middleware</h3>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Requirement</th><th>Strong candidate</th></tr></thead>
+          <tbody>
+            <tr><td>Many SaaS connectors and mappings</td><td>iPaaS</td></tr>
+            <tr><td>Legacy protocols, central mediation</td><td>ESB / integration runtime</td></tr>
+            <tr><td>Durable asynchronous commands</td><td>Message broker</td></tr>
+            <tr><td>Retained high-rate streams, replay</td><td>Kafka-class streaming</td></tr>
+            <tr><td>External APIs, quotas, developer portal</td><td>API management / gateway</td></tr>
+            <tr><td>East-west workload traffic policy</td><td>Service mesh</td></tr>
+            <tr><td>Analytical batch movement</td><td>ETL / ELT</td></tr>
+            <tr><td>EDI and partner onboarding</td><td>B2B gateway</td></tr>
+            <tr><td>Incremental database replication</td><td>CDC platform</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Don't add a broker just because work is async, Kafka just because "events" exist, a service mesh for three services, or microservices just to modernise deployment.</p>
+      <h3>Scoring tools</h3>
+      <p>First remove anything that fails a hard requirement: data residency, required protocol or connector, private connectivity, identity mechanism, throughput and size, audit and retention, support model. Score the rest from 1 to 5:</p>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Criterion</th><th>Weight</th></tr></thead>
+          <tbody>
+            <tr><td>Functional fit</td><td>20</td></tr>
+            <tr><td>Reliability semantics</td><td>15</td></tr>
+            <tr><td>Security / compliance</td><td>15</td></tr>
+            <tr><td>Operability / observability</td><td>10</td></tr>
+            <tr><td>Performance / scalability</td><td>10</td></tr>
+            <tr><td>Developer productivity</td><td>10</td></tr>
+            <tr><td>Ecosystem / connectors</td><td>5</td></tr>
+            <tr><td>Portability / lock-in risk</td><td>5</td></tr>
+            <tr><td>Team skills</td><td>5</td></tr>
+            <tr><td>Three-year TCO</td><td>5</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Then run a proof of concept on the <em>risky</em> assumptions, not the features the demo already showed: our payload and throughput, our hardest mapping, our network topology, replaying failed transactions, promoting schemas through CI/CD, getting the telemetry we need, behaviour during a provider outage, and a realistic three-year bill.</p>
+
+      <h2 id="roadmap">Learning roadmaps</h2>
+      <h3>For architects</h3>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Priority</th><th>Competency</th><th>What "competent" means</th></tr></thead>
+          <tbody>
+            <tr><td>Critical</td><td>Distributed-systems fundamentals</td><td>Latency, partial failure, temporal coupling, consistency, idempotency</td></tr>
+            <tr><td>Critical</td><td>Pattern selection</td><td>Choose deliberately between request-response, queues, pub/sub, streams, choreography and orchestration</td></tr>
+            <tr><td>Critical</td><td>Contracts and boundaries</td><td>Design APIs and events around business meaning and ownership, not tables</td></tr>
+            <tr><td>Critical</td><td>Reliability architecture</td><td>Spot dual writes; design outbox, dedupe, retries, DLQs, compensation, reconciliation</td></tr>
+            <tr><td>Critical</td><td>Security / IAM</td><td>OAuth vs OIDC, workload identity, mTLS, authorization policy</td></tr>
+            <tr><td>High</td><td>Data integration</td><td>ETL, ELT, CDC, mapping, MDM, schema evolution</td></tr>
+            <tr><td>High</td><td>Platform categories</td><td>Why gateways, brokers, streams, meshes, iPaaS, ESBs and B2B gateways differ</td></tr>
+            <tr><td>High</td><td>Observability / SRE</td><td>SLIs, SLOs, tracing, incident recovery, reconciliation</td></tr>
+            <tr><td>High</td><td>Performance</td><td>Capacity, backlog recovery, partitioning, latency budgets</td></tr>
+            <tr><td>High</td><td>Governance</td><td>Self-service contract checks, docs, ownership, deprecation</td></tr>
+            <tr><td>Medium</td><td>Vendor depth, economics, migration</td><td>Your two or three real platforms; multi-year unit cost; strangler migrations</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>An architect should be able to look at any diagram and ask, before discussing products:</p>
+      <ul class="blog-checklist">
+        <li>What happens if this succeeds downstream but times out upstream?</li>
+        <li>What happens if this event arrives twice?</li>
+        <li>Who owns this data?</li>
+        <li>How does this contract evolve independently?</li>
+        <li>How do we know the business transaction completed, and how do we repair it when it didn't?</li>
+        <li>What is the load after three hours of outage?</li>
+        <li>Who gets paged?</li>
+        <li>What data is exposed at each boundary?</li>
+        <li>What does one transaction cost?</li>
+      </ul>
+      <h3>For developers</h3>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Priority</th><th>Competency</th><th>Can do</th></tr></thead>
+          <tbody>
+            <tr><td>Critical</td><td>HTTP / API fundamentals</td><td>Correct methods, status codes, errors, timeouts and OpenAPI contracts</td></tr>
+            <tr><td>Critical</td><td>Serialization</td><td>JSON plus one typed schema technology (Protobuf or Avro)</td></tr>
+            <tr><td>Critical</td><td>Idempotency</td><td>API and message handlers that are safe to repeat</td></tr>
+            <tr><td>Critical</td><td>Failure handling</td><td>Tell transient from permanent errors; bounded timeout, retry and DLQ paths</td></tr>
+            <tr><td>Critical</td><td>Messaging</td><td>Queue vs topic, ack/commit, redelivery, ordering, consumer groups</td></tr>
+            <tr><td>Critical</td><td>Security</td><td>Correct token and certificate handling; never invent auth; least privilege</td></tr>
+            <tr><td>High</td><td>Contract testing, outbox, schema evolution</td><td>Verify changes before deploy; consistent state + event; compatible changes</td></tr>
+            <tr><td>High</td><td>Observability and real integration tests</td><td>Structured logs, metrics and traces; test against real brokers and identity config</td></tr>
+            <tr><td>High</td><td>Load and resilience testing</td><td>Reproduce concurrency, slow dependencies, backlog and failures</td></tr>
+            <tr><td>Medium</td><td>Platform SDKs and operations</td><td>Gateway, broker and iPaaS specifics; read lag and DLQs; replay safely</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>A production-ready handler looks less like <em>receive → deserialize → save</em> and more like this:</p>
+      <pre><code>receive
+  → authenticate / authorize
+  → validate contract
+  → establish trace + correlation
+  → check idempotency
+  → local transaction: business state + processing marker + outbox (if needed)
+  → commit → acknowledge
+  → emit business + operational telemetry
+
+on failure, classify:
+  transient            → bounded retry with backoff
+  bad payload          → DLQ / quarantine
+  business rejection   → explicit business outcome</code></pre>
+      <h3>Building the capability in an organisation</h3>
+      <ol>
+        <li><strong>Standardise contracts:</strong> OpenAPI and event-schema repos, a common envelope, ownership and compatibility rules.</li>
+        <li><strong>Standardise reliability:</strong> shared idempotency, retry, outbox, DLQ and correlation libraries or templates.</li>
+        <li><strong>Standardise identity:</strong> approved OAuth/OIDC, workload identity and mTLS patterns based on RFC 9700.</li>
+        <li><strong>Standardise telemetry:</strong> OpenTelemetry and end-to-end SLIs.</li>
+        <li><strong>Build the minimum platform portfolio</strong> that workloads actually need.</li>
+        <li><strong>Automate governance</strong> in CI/CD rather than in slide decks.</li>
+        <li><strong>Exercise failure:</strong> duplicates, lost responses, slow dependencies, broker outages, expired certificates, malformed messages, crashes, backlogs and replay.</li>
+        <li><strong>Keep simplifying:</strong> remove dead versions, unused topics, dormant point-to-point links, duplicate mappings, old certificates and leftover migration routes.</li>
+      </ol>
+
+      <h2 id="quiz">Knowledge check</h2>
+      <p>Fifteen questions covering the whole article. Each answer is explained as soon as you pick it.</p>
+      <div data-il="quiz" id="integration-quiz"><p class="blog-note-small">The quiz needs JavaScript.</p></div>
+
+      <h2 id="checklist">Go-live checklist</h2>
+      <p>Before approving a production integration, I want a "yes" for essentially every gate that applies. Tick them off for your own project, then copy the result into your design record or ticket.</p>
+      <div data-il="checklist" id="golive-checklist"><p class="blog-note-small">The interactive checklist needs JavaScript.</p></div>
+      <h3>Integration design record template</h3>
+      <p>The short decision record I attach to every integration:</p>
+      <pre><code>Title / Status / Owners / Date
+Business outcome:            Systems / domains:          Data classification:
+Interaction:  [ ] sync query  [ ] sync command  [ ] async command
+              [ ] event  [ ] stream  [ ] batch / file  [ ] CDC
+Chosen pattern:              Alternatives considered:     Why chosen:
+Contract:                    Versioning / evolution:      Source of truth:
+Average load:                Peak / burst:                Payload size:
+Latency / SLO:               Ordering:                    Consistency:
+Replay / retention:
+Authentication:              Authorization:               Encryption:
+Compliance constraints:
+Idempotency:   Retries:   Timeouts:   DLQ:   Outbox:   Saga / compensation:
+Reconciliation:
+Telemetry:     Alerts:    Runbook:    On-call owner:
+Deployment:    Migration: Rollback:
+Cost estimate: Known risks:  Review date:</code></pre>
+
+      <h2 id="conclusion">Conclusion</h2>
+      <p>How many integrations an organisation has built says little about how good it is at integration. The real test is whether a new one can be designed, secured, tested, released, observed, repaired, evolved and finally retired <strong>predictably</strong>, without tribal knowledge or heroics. Start with the business outcome, write the contract down, assume every call can fail in the worst possible place, and make sure someone can see and fix the flow at 3 a.m. Bookmark this page and use the checklist on your next design.</p>
+
+      <h3>Sources and further reading</h3>
+      <ul class="blog-sources">
+        <li><a href="https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/microservices" target="_blank" rel="noopener">Microservices architecture style</a>, <a href="https://learn.microsoft.com/en-us/azure/architecture/guide/technology-choices/messaging" target="_blank" rel="noopener">Asynchronous messaging options</a>, <a href="https://learn.microsoft.com/en-us/azure/architecture/patterns/publisher-subscriber" target="_blank" rel="noopener">Publisher-Subscriber</a>, <a href="https://learn.microsoft.com/en-us/azure/architecture/patterns/saga" target="_blank" rel="noopener">Saga</a> and <a href="https://learn.microsoft.com/en-us/azure/architecture/data-guide/relational-data/etl" target="_blank" rel="noopener">ETL</a>: Azure Architecture Center</li>
+        <li><a href="https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html" target="_blank" rel="noopener">Transactional outbox pattern</a>: AWS Prescriptive Guidance</li>
+        <li><a href="https://sre.google/sre-book/service-level-objectives/" target="_blank" rel="noopener">Service Level Objectives</a>: Google SRE book</li>
+        <li><a href="https://docs.confluent.io/platform/current/schema-registry/fundamentals/schema-evolution.html" target="_blank" rel="noopener">Schema evolution and compatibility</a>: Confluent</li>
+        <li><a href="https://avro.apache.org/docs/1.12.0/specification/" target="_blank" rel="noopener">Apache Avro specification</a> and <a href="https://protobuf.dev/programming-guides/proto3/" target="_blank" rel="noopener">Protocol Buffers language guide</a></li>
+        <li><a href="https://kafka.apache.org/documentation/#design" target="_blank" rel="noopener">Apache Kafka design</a> and <a href="https://debezium.io/documentation/reference/stable/architecture.html" target="_blank" rel="noopener">Debezium architecture</a></li>
+        <li><a href="https://www.rfc-editor.org/rfc/rfc9110" target="_blank" rel="noopener">RFC 9110 HTTP Semantics</a>, <a href="https://www.rfc-editor.org/rfc/rfc8259" target="_blank" rel="noopener">RFC 8259 JSON</a>, <a href="https://spec.openapis.org/oas/v3.2.0.html" target="_blank" rel="noopener">OpenAPI 3.2.0</a>, <a href="https://spec.graphql.org/September2025/" target="_blank" rel="noopener">GraphQL (September 2025)</a>, <a href="https://grpc.io/docs/what-is-grpc/core-concepts/" target="_blank" rel="noopener">gRPC core concepts</a></li>
+        <li><a href="https://www.w3.org/TR/soap12-part1/" target="_blank" rel="noopener">SOAP 1.2</a>, <a href="https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-overview-v1.0-os.html" target="_blank" rel="noopener">AMQP 1.0</a></li>
+        <li><a href="https://www.rfc-editor.org/rfc/rfc6749" target="_blank" rel="noopener">RFC 6749 OAuth 2.0</a>, <a href="https://www.rfc-editor.org/rfc/rfc9700.html" target="_blank" rel="noopener">RFC 9700 OAuth 2.0 Security BCP</a>, <a href="https://www.rfc-editor.org/rfc/rfc8705.html" target="_blank" rel="noopener">RFC 8705 OAuth mTLS</a>, <a href="https://openid.net/specs/openid-connect-core-1_0.html" target="_blank" rel="noopener">OpenID Connect Core</a>, <a href="https://www.rfc-editor.org/rfc/rfc8446" target="_blank" rel="noopener">RFC 8446 TLS 1.3</a></li>
+        <li><a href="https://eur-lex.europa.eu/eli/reg/2016/679/oj/eng" target="_blank" rel="noopener">GDPR</a> and <a href="https://www.pcisecuritystandards.org/standards/pci-dss/" target="_blank" rel="noopener">PCI DSS</a></li>
+        <li><a href="https://opentelemetry.io/docs/" target="_blank" rel="noopener">OpenTelemetry</a>, <a href="https://docs.pact.io/" target="_blank" rel="noopener">Pact</a>, <a href="https://principlesofchaos.org/" target="_blank" rel="noopener">Principles of Chaos Engineering</a>, <a href="https://martinfowler.com/bliki/StranglerFigApplication.html" target="_blank" rel="noopener">Strangler Fig</a></li>
+        <li><a href="https://www.mulesoft.com/platform/enterprise-integration" target="_blank" rel="noopener">MuleSoft</a>, <a href="https://boomi.com/platform/integration/" target="_blank" rel="noopener">Boomi</a>, <a href="https://www.ibm.com/products/app-connect" target="_blank" rel="noopener">IBM App Connect</a>, <a href="https://cloud.google.com/application-integration/docs/overview" target="_blank" rel="noopener">Google Application Integration</a>, <a href="https://istio.io/latest/docs/overview/what-is-istio/" target="_blank" rel="noopener">Istio</a></li>
+      </ul>
+      <p class="blog-note-small">The lesson progress and checklist ticks on this page are stored only in your browser's local storage. Nothing is sent anywhere.</p>
+    `
+  },
+  {
     slug: 'solution-design-document-master-template',
     title: 'Solution Design Documents That Get Approved: A Master Template and a Free SDD Builder',
     date: '2026-10-10',
