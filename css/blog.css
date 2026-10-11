@@ -157,3 +157,100 @@
 
 .blog-figure{margin:0 0 24px}
 .blog-figure figcaption{margin-top:8px;font-size:14px;line-height:1.5;color:var(--muted);text-align:center}
+
+/* ============================================================
+   SDD BUILDER (js/sdd-builder.js) — interactive tool in a post
+   ============================================================ */
+.sdd{margin:8px 0 32px;background:var(--surface);border:1px solid var(--line-strong);border-radius:16px;padding:22px;font-size:15px;line-height:1.55}
+.sdd-head h3{margin:2px 0 6px;font-size:22px}
+.sdd-head p{color:var(--muted);margin:0 0 6px}
+.sdd-kicker{font-size:12px!important;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)!important;margin:0!important}
+.sdd-step{border-top:1px solid var(--line);margin-top:18px;padding-top:16px}
+.sdd-step h4{display:flex;align-items:center;gap:10px;margin:0 0 12px;font:600 16px "Space Grotesk",sans-serif}
+.sdd-step h4 span{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--on-accent);font-size:13px}
+.sdd-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
+.sdd-field{display:flex;flex-direction:column;gap:5px;min-width:0;margin:0;border:0;padding:0}
+.sdd-field > span,.sdd-field legend{font-size:13px;font-weight:600;color:var(--text);padding:0}
+.sdd-field em{font-style:normal;font-weight:500;color:var(--muted)}
+.sdd-wide{grid-column:1 / -1}
+.sdd input[type=text],.sdd input[type=date],.sdd select,.sdd textarea{
+  width:100%;font:inherit;font-size:14.5px;color:var(--text);background:var(--bg);
+  border:1px solid var(--line-strong);border-radius:10px;padding:9px 11px;transition:border-color .15s;
+}
+.sdd textarea{resize:vertical;line-height:1.5}
+.sdd input:focus,.sdd select:focus,.sdd textarea:focus{outline:none;border-color:var(--accent)}
+.sdd input[type=date]{color-scheme:dark}
+.sdd-tiers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.sdd-tier{display:flex;flex-direction:column;gap:2px;text-align:left;font:inherit;color:var(--muted);background:var(--bg);border:1px solid var(--line-strong);border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color .15s,background .15s}
+.sdd-tier strong{color:var(--text);font-size:15px}
+.sdd-tier span{font-size:13.5px;color:var(--text)}
+.sdd-tier small{font-size:12px}
+.sdd-tier:hover{border-color:var(--accent)}
+.sdd-tier[aria-checked="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.sdd-tier[aria-checked="true"] strong{color:var(--accent)}
+.sdd-assist{margin-top:12px}
+.sdd-assist summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--accent);margin-bottom:10px}
+.sdd-rec{margin:12px 0 0!important;font-size:14px;color:var(--muted)}
+.sdd-checks{display:flex;flex-direction:row;flex-wrap:wrap;gap:8px}
+.sdd-checks legend{width:100%;margin-bottom:2px}
+.sdd-checks label{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;background:var(--bg);border:1px solid var(--line-strong);border-radius:999px;padding:5px 12px;cursor:pointer}
+.sdd-checks input,.sdd-toggle input{accent-color:var(--accent);margin:0}
+.sdd-secs label{border-radius:8px}
+.sdd-hint{font-size:13.5px;color:var(--muted);margin:-4px 0 10px!important}
+.sdd-toggle{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:14px;cursor:pointer}
+.sdd-out{border-top:1px solid var(--line);margin-top:18px;padding-top:16px}
+.sdd-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.sdd-tabs{display:inline-flex;border:1px solid var(--line-strong);border-radius:10px;overflow:hidden}
+.sdd-tabs button{font:inherit;font-size:13.5px;font-weight:600;color:var(--muted);background:transparent;border:0;padding:7px 14px;cursor:pointer}
+.sdd-tabs button[aria-selected="true"]{background:var(--accent);color:var(--on-accent)}
+.sdd-tbd{font-size:13px;color:var(--muted)}
+.sdd-paper,.sdd-md{max-height:620px;overflow:auto;border-radius:12px;border:1px solid var(--line-strong)}
+.sdd-paper{background:#fff;color:#1e293b;padding:26px 28px;font-size:13.5px;line-height:1.55}
+.sdd-paper h1{font-size:22px;line-height:1.2;margin:0 0 4px;color:#0f172a}
+.sdd-paper .sub{color:#64748b;margin:0 0 18px;font-size:12.5px}
+.sdd-paper h2{font-size:17px;margin:24px 0 8px;padding-bottom:4px;border-bottom:1px solid #cbd5e1;color:#0f172a}
+.sdd-paper h3{font-size:14.5px;margin:16px 0 6px;color:#0f172a}
+.sdd-paper p,.sdd-paper ul{margin:0 0 10px}
+.sdd-paper li{margin-bottom:3px}
+.sdd-paper .note{color:#64748b;font-style:italic;font-size:12.5px}
+.sdd-paper table{width:100%;border-collapse:collapse;margin:0 0 12px;font-size:12.5px}
+.sdd-paper th,.sdd-paper td{border:1px solid #cbd5e1;padding:5px 8px;text-align:left;vertical-align:top}
+.sdd-paper th{background:#f1f5f9}
+.sdd-paper figure{margin:0 0 12px;border:1px solid #e2e8f0;border-radius:8px;padding:8px;overflow-x:auto}
+.sdd-paper figure svg{display:block;max-width:100%;height:auto;margin:0 auto}
+.sdd-paper figcaption{color:#64748b;font-size:12px;text-align:center;margin-top:4px}
+.sdd-md{margin:0;background:var(--bg);padding:16px 18px;font-size:12.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.sdd-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.sdd-btn{font:inherit;font-size:14px;font-weight:600;color:var(--text);background:transparent;border:1px solid var(--line-strong);border-radius:10px;padding:8px 14px;cursor:pointer;transition:border-color .15s,color .15s}
+.sdd-btn:hover{border-color:var(--accent);color:var(--accent)}
+.sdd-btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.sdd-btn.primary:hover{color:var(--on-accent);filter:brightness(1.08)}
+.sdd-btn.ghost{margin-left:auto;color:var(--muted)}
+.sdd-status{min-height:1.4em;margin:8px 0 0!important;font-size:13.5px;color:var(--accent)}
+.sdd-btn:disabled{opacity:.6;cursor:progress}
+.sdd-btn.small{font-size:13px;padding:5px 10px;border-radius:8px}
+.sdd-btn.small.ghost{margin-left:0}
+
+/* Diagrams step */
+.sdd-dgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.sdd-dcard{display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--line-strong);border-radius:12px;overflow:hidden}
+.sdd-dthumb{height:140px;background:#fff;display:flex;align-items:center;justify-content:center;padding:10px;border-bottom:1px solid var(--line-strong)}
+.sdd-dthumb img{max-width:100%;max-height:100%;object-fit:contain}
+.sdd-dinfo{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:12px}
+.sdd-dinfo strong{font-size:14.5px}
+.sdd-dinfo select{font-size:13px;padding:6px 8px}
+.sdd-dbadge{font-size:11.5px;font-weight:600;color:var(--muted);border:1px solid var(--line-strong);border-radius:999px;padding:1px 9px}
+.sdd-dbadge.on{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.sdd-dbtns{display:flex;flex-wrap:wrap;gap:6px}
+.sdd-dadd{display:flex;align-items:flex-end;gap:10px;margin-top:14px}
+.sdd-dadd .sdd-field{flex:1}
+
+
+@media (max-width:640px){
+  .sdd{padding:16px;margin-left:-4px;margin-right:-4px}
+  .sdd-grid,.sdd-tiers{grid-template-columns:1fr}
+  .sdd-paper{padding:18px 16px}
+  .sdd-btn.ghost{margin-left:0}
+  .sdd-dgrid{grid-template-columns:1fr}
+  .sdd-dadd{flex-direction:column;align-items:stretch}
+}

@@ -16,6 +16,163 @@
    ============================================================ */
 window.BLOG_POSTS = [
   {
+    slug: 'solution-design-document-master-template',
+    title: 'Solution Design Documents That Get Approved: A Master Template and a Free SDD Builder',
+    date: '2026-10-10',
+    tags: ['Architecture', 'Documentation', 'Solution Design', 'Tools'],
+    summary: 'How I document solutions with one master Solution Architecture Design Document, scaled to the project with a three-tier selector. Includes a section-by-section guide and an interactive builder with a full draw.io diagram editor that exports a ready-to-review SDD to Word, PDF, Markdown or HTML.',
+    body: `
+      <p class="blog-lead">Most architecture documents fail in one of two ways. Either they are a 60-page template nobody finishes, or they are a few slides and a diagram that can't answer the first question in the review. I use one <strong>master Solution Architecture Design Document (SDD)</strong> for every project and scale it to the project with a simple tier selector. This post explains the template section by section, and at the end there is a <a href="#builder">builder</a> that turns your inputs into a complete SDD you can export and take to your next review.</p>
+      <div class="blog-equation">Pick a tier → fill only the sections that tier needs → put a number on every NFR → export and review</div>
+
+      <div class="blog-callout tip"><strong>Here for the tool?</strong> Jump straight to the <a href="#builder">SDD builder</a>. It saves your inputs in your browser, so you can come back to this page whenever you start a new design.</div>
+
+      <nav class="blog-toc" aria-label="Contents">
+        <strong>Contents</strong>
+        <ol>
+          <li><a href="#why">Why one master template</a></li>
+          <li><a href="#tiers">Step 1: choose the project tier</a></li>
+          <li><a href="#sections">The 14 sections, one by one</a></li>
+          <li><a href="#nfr">The NFR matrix is the contract</a></li>
+          <li><a href="#workflow">How I use it day to day</a></li>
+          <li><a href="#mistakes">Mistakes reviewers catch</a></li>
+          <li><a href="#builder">SDD builder: generate and export</a></li>
+          <li><a href="#conclusion">Conclusion</a></li>
+        </ol>
+      </nav>
+
+      <h2 id="why">Why one master template</h2>
+      <p>When every team writes design documents in its own format, reviewers spend their time looking for information instead of challenging it. One template fixes that, as long as it doesn't force a pilot project to write a disaster recovery plan. So the template has two parts:</p>
+      <ul>
+        <li><strong>A tier selector</strong> that decides how much detail the project needs.</li>
+        <li><strong>Fourteen numbered sections (0–13)</strong> that always keep the same names and order, so a reviewer knows that security is always Section 7 and risks are always Section 10.</li>
+      </ul>
+      <p>The structure follows the <a href="https://c4model.com" target="_blank" rel="noopener">C4 model</a> for diagrams and ends with the questions every architecture board asks: what can go wrong, what else did you consider, and what will it cost.</p>
+
+      <h2 id="tiers">Step 1: choose the project tier</h2>
+      <p>Before writing anything, classify the system. The tier sets the SLA, the security bar and which sections are required.</p>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Dimension</th><th>Tier 1: MVP / Small</th><th>Tier 2: Standard Product</th><th>Tier 3: Enterprise / Mission-Critical</th></tr></thead>
+          <tbody>
+            <tr><td>Typical audience</td><td>Internal PoC, early startup, pilot</td><td>Departmental tool, mid-market SaaS, core feature</td><td>High-availability platform, core financial or healthcare system</td></tr>
+            <tr><td>SLA / uptime</td><td>Best effort (&lt; 99.0%)</td><td>99.9% (~8.7 hrs downtime/yr)</td><td>99.99%+ (&lt; 52 mins downtime/yr)</td></tr>
+            <tr><td>Data classification</td><td>Public / internal non-sensitive</td><td>Confidential / PII</td><td>Highly confidential, regulated (PCI, HIPAA, GDPR)</td></tr>
+            <tr><td>Deployment target</td><td>Single region, container / serverless</td><td>Multi-AZ, managed cloud</td><td>Multi-region / hybrid / active-active</td></tr>
+            <tr><td>Architectural focus</td><td>Velocity, simplicity, cost</td><td>Scalability, maintainability, test coverage</td><td>High availability, compliance, zero downtime, DR</td></tr>
+            <tr><td>Required sections</td><td>0–4, light 7–8</td><td>0–10</td><td>All, 0–13</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="blog-callout"><strong>Rule of thumb:</strong> the highest answer wins. A small internal tool that stores patient data is Tier 3 for security, even if its uptime target is best effort. When the dimensions disagree, write down which one drove the decision.</div>
+
+      <h2 id="sections">The 14 sections, one by one</h2>
+
+      <h3>Section 0: Document control</h3>
+      <p>Title, project ID, tier, lead architect, product owner, engineering lead, status (Draft, Under Review, Approved, Superseded) and a revision history. It looks like admin, but it's how you prove which version the board approved. Every approval adds a row.</p>
+
+      <h3>Section 1: Executive summary and scope</h3>
+      <p>Two or three paragraphs on the business problem and the target solution, then a primary objective and measurable business outcomes. Finish with a <strong>scope table</strong> covering in-scope and out-of-scope for functional capabilities, integrations, and user base or geography. The out-of-scope column prevents more arguments than any other part of the document.</p>
+      <ul>
+        <li><strong>Tier 1:</strong> one paragraph, focused on what you are trying to validate.</li>
+        <li><strong>Tier 2:</strong> add business metrics, integration boundaries and target SLAs.</li>
+        <li><strong>Tier 3:</strong> add multi-year strategic alignment, regulatory impact and cross-organisation dependencies.</li>
+      </ul>
+
+      <h3>Section 2: Architecture principles and context</h3>
+      <p>Three or four principles that later decisions are checked against, for example <em>managed services first</em>, <em>security by design</em> or <em>event-driven where possible</em>. A principle is only useful if it can rule something out. Then a <strong>C4 Level 1 context diagram</strong>: people, your system as one box, and the external systems it talks to. No technology names yet.</p>
+
+      <h3>Section 3: Functional and non-functional requirements</h3>
+      <p>A numbered list of functional requirements (FR-001, FR-002 …) with module and priority, then the <a href="#nfr">NFR matrix</a>. Requirement IDs matter because test cases, user stories and risks can then refer to them.</p>
+
+      <h3>Section 4: System architecture (C4 Levels 2 and 3)</h3>
+      <p>The <strong>container diagram</strong> shows every deployable unit (front ends, APIs, services, databases, caches, queues) and the protocol between them. The <strong>component table</strong> breaks down only the services that carry real complexity: component, tech stack, responsibility and interface standard (OpenAPI, AsyncAPI, gRPC).</p>
+
+      <h3>Section 5: Data architecture and lifecycle</h3>
+      <p>Which storage engine holds which data and why (relational for the transactional model, key-value for cache and sessions, an analytical store for reporting), how the schema evolves without downtime, and a <strong>retention matrix</strong>: classification, storage, retention period, encryption and archival or deletion strategy. This is the table your privacy and compliance teams will read first.</p>
+
+      <h3>Section 6: Integration and communication patterns</h3>
+      <p>An integration catalog with source, target, sync or async, protocol and SLA, followed by what happens when things fail: circuit breakers for vendor APIs, exponential backoff with jitter, and a dead letter queue with alerting.</p>
+
+      <h3>Section 7: Security, identity and compliance</h3>
+      <p>Authentication (OAuth 2.0 and OIDC with short-lived tokens), authorization (RBAC and ABAC at the gateway and at each service), encryption in transit and at rest, key rotation and secrets management. For Tier 2 and 3, map each control to the compliance standard it satisfies, so the security review becomes a checklist instead of a debate.</p>
+
+      <h3>Section 8: Deployment, infrastructure and DevOps</h3>
+      <p>Infrastructure as code, the runtime platform, and a pipeline table per environment: strategy (continuous deployment, blue/green, canary), approval gate and infrastructure pattern. Always say how a release is rolled back.</p>
+
+      <h3>Section 9: Observability, operations and support</h3>
+      <p>Structured logs with trace IDs, RED metrics, distributed tracing with OpenTelemetry, and a support matrix that says, for P1 to P3, the response SLA, the target resolution time and who is escalated to.</p>
+
+      <h3>Section 10: Risks, assumptions, constraints and dependencies (RACK)</h3>
+      <p>One table, four categories, each row with an ID, impact and mitigation. A risk without a mitigation is a worry, not a risk entry. An assumption you haven't validated is a risk.</p>
+
+      <h3>Section 11: Alternatives and trade-offs</h3>
+      <p>At least three options with pros, cons and a decision: selected, rejected or deferred. Reviewers read this section most closely because it shows whether the chosen design was compared against anything.</p>
+
+      <h3>Section 12: Cost and capacity</h3>
+      <p>A monthly cost model by resource category (compute, database and caching, networking and egress, observability and security) and the capacity assumptions behind it. The template baseline is roughly $200 a month for Tier 1, $1,600 for Tier 2 and $7,500+ for Tier 3. Treat those numbers as a sanity check and replace them with a pricing-calculator estimate.</p>
+
+      <h3>Section 13: Appendices and references</h3>
+      <p>Links to the OpenAPI specs, compliance strategy, security standards, ADRs and the architecture review board sign-off.</p>
+
+      <h2 id="nfr">The NFR matrix is the contract</h2>
+      <p>If you only get one section right, make it this one. Every later choice (multi-AZ or multi-region, cache or no cache, synchronous or event-driven) follows from these numbers.</p>
+      <div class="blog-table">
+        <table>
+          <thead><tr><th>Category</th><th>Metric</th><th>Tier 1</th><th>Tier 2</th><th>Tier 3</th></tr></thead>
+          <tbody>
+            <tr><td>Availability</td><td>Uptime SLA</td><td>99.0%</td><td>99.9%</td><td>99.99%</td></tr>
+            <tr><td>Performance</td><td>API response (p95)</td><td>&lt; 1000ms</td><td>&lt; 200ms</td><td>&lt; 50ms</td></tr>
+            <tr><td>Throughput</td><td>Peak requests / sec</td><td>50</td><td>1,000</td><td>10,000+</td></tr>
+            <tr><td>RPO</td><td>Acceptable data loss</td><td>24 hours</td><td>1 hour</td><td>Near zero (&lt; 1 sec)</td></tr>
+            <tr><td>RTO</td><td>Acceptable downtime</td><td>12 hours</td><td>2 hours</td><td>&lt; 15 minutes</td></tr>
+            <tr><td>Compliance</td><td>Standards</td><td>Basic GDPR</td><td>SOC 2 Type II, GDPR</td><td>PCI-DSS, HIPAA, ISO 27001</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>These are defaults, not laws. An AI agent that streams answers from an LLM won't hit a 50ms p95, and a nightly data platform cares more about data freshness than request latency. The builder below adjusts the performance targets for those cases.</p>
+
+      <h2 id="workflow">How I use it day to day</h2>
+      <ol>
+        <li><strong>Kick-off (30 minutes):</strong> agree the tier with the product owner, then fill Sections 0 and 1 together. The scope table is easiest to settle while everyone is in the room.</li>
+        <li><strong>Day one draft:</strong> generate the skeleton with the builder, with guidance notes on, and share it as <em>Draft v0.1</em>. Placeholders show reviewers exactly what is still open.</li>
+        <li><strong>Diagrams:</strong> open the generated context and container diagrams in the editor, swap in real cloud icons, and add a deployment diagram for Section 8.</li>
+        <li><strong>NFR workshop:</strong> put real numbers in Section 3 with operations and security. Everything after this depends on them.</li>
+        <li><strong>Options and risks:</strong> write Sections 10 and 11 before the review, not after. Record the main decision as an ADR.</li>
+        <li><strong>Review and version:</strong> move to <em>Under Review</em>, collect comments, then <em>Approved</em> with a new row in the revision history. When the design changes later, the old version becomes <em>Superseded</em>.</li>
+      </ol>
+
+      <h2 id="mistakes">Mistakes reviewers catch</h2>
+      <ul class="blog-checklist">
+        <li>NFRs without numbers: "highly available" and "fast" are not requirements.</li>
+        <li>A context diagram full of technology names. Level 1 is about people and systems.</li>
+        <li>No out-of-scope column, so scope grows during the build.</li>
+        <li>Only one option in Section 11. If nothing was rejected, nothing was evaluated.</li>
+        <li>Risks without owners or mitigations.</li>
+        <li>Retention periods missing for PII and logs.</li>
+        <li>No rollback plan in Section 8.</li>
+        <li>Tier 3 sections filled in for a Tier 1 pilot. Over-documenting is waste too.</li>
+      </ul>
+
+      <h2 id="builder">SDD builder: generate and export</h2>
+      <p>Choose what you are designing (SaaS web app, Salesforce/CRM implementation, AI agent or RAG solution, integration platform, mobile app, data platform, or the generic master template) and a tier. The builder fills each section with sensible defaults for that case: principles, container diagram, components, data retention, integrations, security controls, pipelines, support model, RACK entries and alternatives. It also maps service names to the cloud you pick.</p>
+      <h3>Diagrams with a full editor</h3>
+      <p>The context and container diagrams are drawn from your inputs. Press <strong>Edit</strong> on either one and it opens in a new tab in <a href="https://www.drawio.com" target="_blank" rel="noopener">draw.io</a>, the free diagram editor, already loaded with the generated diagram. You get the whole editor: C4, AWS, Azure, GCP, Kubernetes and network shape libraries, your own images and logos, layers, styles and templates. Press <strong>Save &amp; Exit</strong>, the tab closes, and your version replaces the generated one everywhere. You can also <strong>draw new diagrams</strong> (deployment, data flow, sequence, security zones and more) and choose which section each one goes in. Every diagram can be downloaded as a <code>.drawio</code> file to keep editing in diagrams.net, the draw.io desktop app, Confluence or VS Code.</p>
+      <h3>Exports</h3>
+      <ul>
+        <li><strong>Word (.docx):</strong> a real Word document with styled headings, tables and your diagrams as images. It also opens in Google Docs and Pages.</li>
+        <li><strong>PDF:</strong> uses your browser's print dialog, with the diagrams drawn in.</li>
+        <li><strong>Markdown:</strong> for Confluence, Notion, GitHub or a docs-as-code repository. Generated diagrams are included as Mermaid; edited diagrams download next to it as <code>.drawio.svg</code> files, which show as images on GitHub and stay editable.</li>
+        <li><strong>HTML:</strong> a standalone page you can host or attach.</li>
+      </ul>
+      <div data-sdd-builder id="sdd-builder"><p class="blog-note-small">The SDD builder needs JavaScript. Please enable it to use the tool.</p></div>
+      <p class="blog-note-small">Everything runs in your browser and your last inputs and diagrams are kept in this browser's local storage until you press Reset. The diagram editor is the free hosted draw.io editor, loaded only when you open it; it edits diagrams in your browser and doesn't store them on its servers. The Word export loads the open-source JSZip library from cdnjs the first time you use it.</p>
+
+      <h2 id="conclusion">Conclusion</h2>
+      <p>A good SDD isn't long. It is complete for its tier: every NFR has a number, every risk has a mitigation, and every rejected option has a reason. Pick the tier first, fill only what that tier needs, and let the template keep the structure consistent so reviews are about the design instead of the format. Bookmark the builder and use it for your next design.</p>
+    `
+  },
+  {
     slug: 'pocketly-local-first-flutter-finance-app',
     title: 'Building Pocketly: A Local-First, Encrypted Personal Finance App in Flutter',
     date: '2026-10-01',

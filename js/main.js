@@ -128,7 +128,6 @@
     });
     dropdownCards.push(card);
   }
-  initDropdownCard('phoneCard');
   initDropdownCard('linkedinCard');
   document.addEventListener('click', (e) => {
     dropdownCards.forEach(card => {
